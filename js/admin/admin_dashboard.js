@@ -418,9 +418,9 @@ function initStreamViewer() {
 }
 
 // --- 페이지 이동 함수 ---
-window.goOutdoor = () => location.href = '../../html/admin/outdoor/admin_outdoor_map.html';
-window.goIndoor = () => location.href = '../../html/admin/indoor/admin_indoor.html';
-window.goVisionControl = () => location.href = '/html/vision/admin_vision_control.html';
+window.goOutdoor = () => location.href = '../../html/campus/map_outdoor.html';
+window.goIndoor = () => location.href = '../../html/campus/map_indoor.html';
+window.goVisionControl = () => location.href = '../../html/admin/admin_vision_control.html';
 
 // --- 앱 실행 ---
 (async function main() {
