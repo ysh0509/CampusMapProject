@@ -109,7 +109,7 @@ export function initAdminHeader(active = '') {
   const base = '/html/admin';
   const routes = {
     dashboard: `${base}/admin_dashboard.html`,
-    vision: `/html/vision/admin_vision_control.html`,
+    vision: `${base}/admin_vision_control.html`,
     outdoor: `${base}/outdoor/admin_outdoor_map.html`,
     indoor: `${base}/indoor/admin_indoor.html`,
     elevation: `${base}/outdoor/admin_elevation_editor.html`,
