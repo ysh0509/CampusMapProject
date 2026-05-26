@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Campus | AI 공간 분석 시스템</title>
+    <link rel="stylesheet" href="index.css">
+    <!-- Pretendard Font -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-glow">
+        <div class="glow-circle" style="background: var(--primary); top: -10%; left: -10%;"></div>
+        <div class="glow-circle" style="background: var(--accent); bottom: -10%; right: -10%; animation-delay: -5s;"></div>
+    </div>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero container">
+            <h1 id="hero-title">Smart Campus</h1>
+            <p id="hero-desc">AI 기반 실시간 공간 혼잡도 분석 및<br>지능형 통합 관제 플랫폼</p>
+            <a href="map_outdoor.html" class="cta-button">시스템 접속하기</a>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features container">
+            <h2 class="section-title">Core Technology</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">👁️</span>
+                    <h3>Real-time Vision AI</h3>
+                    <p>YOLOv8 기반의 정밀한 객체 검출을 통해 실시간 인원 수와 공간 점유율을 정확히 분석합니다.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📍</span>
+                    <h3>Smart Navigation</h3>
+                    <p>혼잡도를 반영한 최적 경로 탐색 및 실내외 통합 내비게이션 서비스를 제공합니다.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📊</span>
+                    <h3>Integrated Control</h3>
+                    <p>Supabase 기반 실시간 데이터 동기화로 관리자에게 통합된 관제 대시보드를 지원합니다.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🤖</span>
+                    <h3>Edge Intelligence</h3>
+                    <p>ESP32-S3 임베디드 시스템과 연동하여 현장에서 즉각적인 피드백을 수행합니다.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Smart Campus Project. Developed by Mindlogic Team.</p>
+        </div>
+    </footer>
+
+    <script src="index.js"></script>
+</body>
+</html>
