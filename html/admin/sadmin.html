@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<script>
+    window.__ENV = {
+      SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+    };
+</script>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Super Admin</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f5f7fb;
+      padding: 20px;
+      color: #222;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f0f2f5;
+    }
+
+    input, select, button {
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      cursor: pointer;
+      background: #111827;
+      color: white;
+      border: none;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .danger {
+      background: #dc2626;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .admin {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .superadmin {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Super Admin Dashboard</h1>
+
+  <div class="card">
+    <h2>관리자 생성</h2>
+
+    <div class="row">
+      <input type="email" id="new-email" placeholder="이메일" />
+      <input type="password" id="new-password" placeholder="비밀번호" />
+
+      <select id="new-role">
+        <option value="admin">admin</option>
+        <option value="superadmin">superadmin</option>
+      </select>
+
+      <button id="create-admin-btn">생성</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>관리자 목록</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Created</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+
+      <tbody id="admin-table-body"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>관리자 로그</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Action</th>
+          <th>Description</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+
+      <tbody id="log-table-body"></tbody>
+    </table>
+  </div>
+
+  <script type="module" src="/js/admin/sadmin.js"></script>
+</body>
+</html>

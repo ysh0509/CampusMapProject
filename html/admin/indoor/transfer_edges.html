@@ -1,0 +1,312 @@
+<!-- html/admin/indoor/transfer_edges.html -->
+
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+<meta charset="UTF-8">
+
+<title>Transfer Edge Manager</title>
+
+<script>
+window.__ENV = {
+  SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+
+};
+</script>
+
+<link
+rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"
+/>
+
+<style>
+
+/* =========================
+   GLOBAL
+========================= */
+
+html,
+body {
+  margin:0;
+  height:100%;
+  font-family:Arial,sans-serif;
+  background:#f5f7fb;
+}
+
+/* =========================
+   CONTENT
+========================= */
+
+#admin-content {
+
+  display:flex;
+
+  height:calc(100vh - 60px);
+}
+
+/* =========================
+   MAP
+========================= */
+
+#map {
+
+  flex:1;
+
+  height:100%;
+}
+
+/* =========================
+   PANEL
+========================= */
+
+#panel {
+
+  width:420px;
+
+  background:#fff;
+
+  border-left:1px solid #ddd;
+
+  padding:14px;
+
+  overflow:auto;
+
+  box-sizing:border-box;
+}
+
+/* =========================
+   PANEL TITLE
+========================= */
+
+#panel h3 {
+
+  margin:10px 0 6px;
+
+  font-size:14px;
+}
+
+/* =========================
+   PANEL FORM
+========================= */
+
+#panel select,
+#panel input,
+#panel button {
+
+  width:100%;
+
+  padding:8px;
+
+  margin-bottom:10px;
+
+  box-sizing:border-box;
+
+  border:1px solid #ccc;
+
+  border-radius:6px;
+
+  font-size:14px;
+}
+
+/* =========================
+   CREATE BUTTON
+========================= */
+
+#createBtn {
+
+  background:#2563eb;
+
+  color:white;
+
+  border:none;
+
+  cursor:pointer;
+}
+
+#createBtn:hover {
+
+  background:#1e4ed8;
+}
+
+/* =========================
+   STATUS
+========================= */
+
+.statusBox {
+
+  padding:8px;
+
+  border-radius:6px;
+
+  background:#eef3ff;
+
+  margin-bottom:10px;
+
+  font-size:13px;
+}
+
+/* =========================
+   FLOOR WRAPPER
+========================= */
+
+#floorWrapper {
+
+  position:relative;
+
+  width:100%;
+
+  min-height:300px;
+
+  border:1px solid #ccc;
+
+  overflow:auto;
+
+  background:#fafafa;
+}
+
+/* =========================
+   FLOOR IMAGE
+========================= */
+
+#floorImage {
+
+  display:block;
+
+  max-width:none;
+}
+
+/* =========================
+   INDOOR NODE
+========================= */
+
+.indoorNode {
+
+  position:absolute;
+
+  width:14px;
+  height:14px;
+
+  border-radius:50%;
+
+  background:#2563eb;
+
+  border:2px solid white;
+
+  transform:translate(-50%,-50%);
+
+  cursor:pointer;
+
+  z-index:100;
+}
+
+.indoorNode:hover {
+
+  transform:
+  translate(-50%,-50%)
+  scale(1.15);
+}
+
+.indoorNode.active {
+
+  background:#dc2626;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div id="admin-header"></div>
+
+<!-- CONTENT -->
+<div id="admin-content">
+
+  <!-- MAP -->
+  <div id="map"></div>
+
+  <!-- PANEL -->
+  <div id="panel">
+
+    <!-- OUTDOOR -->
+    <h3>선택된 외부 노드</h3>
+
+    <div
+    id="outdoorSelected"
+    class="statusBox">
+      없음
+    </div>
+
+    <!-- INDOOR -->
+    <h3>선택된 실내 노드</h3>
+
+    <div
+    id="indoorSelected"
+    class="statusBox">
+      없음
+    </div>
+
+    <!-- BUILDING -->
+    <h3>건물</h3>
+
+    <select id="buildingSelect">
+
+      <option value="">
+        선택
+      </option>
+
+    </select>
+
+    <!-- FLOOR -->
+    <h3>층</h3>
+
+    <select id="floorSelect">
+
+      <option value="">
+        선택
+      </option>
+
+    </select>
+
+    <!-- SEARCH -->
+    <h3>강의실 검색</h3>
+
+    <input
+    type="text"
+    id="roomSearch"
+    placeholder="강의실 번호 검색"
+    />
+
+    <!-- FLOOR IMAGE -->
+    <h3>평면도</h3>
+
+    <div id="floorWrapper">
+
+      <img id="floorImage"/>
+
+    </div>
+
+    <!-- CREATE -->
+    <button id="createBtn">
+
+      연결 생성
+
+    </button>
+
+  </div>
+
+</div>
+
+<script
+src="https://unpkg.com/leaflet/dist/leaflet.js">
+</script>
+
+<script
+type="module"
+src="/js/admin/indoor/transfer_edges.js">
+</script>
+
+</body>
+</html>

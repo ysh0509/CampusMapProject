@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<script>
+  window.__ENV = {
+    SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+  };
+</script>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indoor Admin | Smart Campus</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- Google Fonts: Pretendard 대체용 Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg-main: #f8fafc;
+      --sidebar-bg: rgba(255, 255, 255, 0.8);
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --accent: #f59e0b;
+      --danger: #ef4444;
+      --success: #10b981;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+
+    * { box-sizing: border-box; font-family: 'Inter', 'Pretendard', system-ui, -apple-system, sans-serif; }
+    body { margin: 0; background: var(--bg-main); color: var(--text-main); overflow: hidden; }
+
+    #admin-content { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; }
+    #app { display: flex; flex: 1; overflow: hidden; }
+
+    /* Sidebar Styling */
+    #sidebar {
+      width: 380px;
+      background: var(--sidebar-bg);
+      backdrop-filter: blur(12px);
+      border-right: 1px solid var(--border-color);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.02);
+    }
+
+    h1 { margin: 0; font-size: 22px; font-weight: 700; color: var(--primary); letter-spacing: -0.5px; }
+    h3 { margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Tab Navigation */
+    .tabs { 
+      display: flex; 
+      background: #e2e8f0; 
+      padding: 4px; 
+      border-radius: 12px; 
+      gap: 4px; 
+    }
+    .tab {
+      flex: 1;
+      padding: 8px 4px;
+      text-align: center;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+    }
+    .tab.active { 
+      background: var(--card-bg); 
+      color: var(--primary); 
+      box-shadow: var(--shadow);
+    }
+
+    /* Section & Card Styling */
+    .section {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .row > div { flex: 1; }
+
+    /* Input & Select Styling */
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      font-size: 14px;
+      background: #fff;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    input::placeholder { color: #cbd5e1; }
+
+    /* Button Styling */
+/* --- 기존의 전역 button 스타일을 삭제하고 아래와 같이 범위를 제한합니다 --- */
+
+/* 1. 사이드바 내의 공통 버튼 스타일 (범위 제한) */
+#sidebar button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 2. 사이드바 내의 메인 액션 버튼 (Primary) */
+#sidebar button#btnAddBuilding, 
+#sidebar button#btnAddFloor, 
+#sidebar button#btnLoadFloor, 
+#sidebar button#btnUploadImage {
+  background: var(--primary);
+  color: white;
+  margin-top: 8px;
+}
+
+#sidebar button#btnAddBuilding:hover, 
+#sidebar button#btnAddFloor:hover, 
+#sidebar button#btnLoadFloor:hover, 
+#sidebar button#btnUploadImage:hover {
+  background: var(--primary-hover);
+}
+
+/* 3. 사이드바 내의 보조 버튼 (Secondary) */
+#sidebar button.secondary {
+  background: #f1f5f9;
+  color: var(--text-main);
+}
+
+#sidebar button.secondary:hover {
+  background: #e2e8f0;
+}
+
+/* 4. 버튼 클릭 시 피드백 (전역 효과는 유지하되 대상은 sidebar 내부로) */
+#sidebar button:active {
+  transform: scale(0.98);
+}
+
+/* 5. 아이템 리스트 내의 작은 버튼들 (수정/삭제 버튼) */
+.item-actions button {
+  width: auto; /* 리스트 버튼은 전체 너비를 쓰지 않음 */
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* --- 이제 admin-header 안에 있는 button은 이 스타일의 영향을 받지 않습니다 --- */
+
+
+    /* List & Item Styling */
+    .list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 8px;
+    }
+    .item {
+      padding: 12px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .item:last-child { border-bottom: none; }
+    .item-info { font-weight: 500; color: var(--text-main); }
+    .item-actions { display: flex; gap: 6px; }
+    .item-actions button { padding: 6px; font-size: 12px; }
+
+    /* Tooltip / Instruction Box */
+    .tools-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+      color: #1e40af;
+      line-height: 1.6;
+    }
+    .tools-box div { display: flex; align-items: center; gap: 6px; }
+    .tools-box span { font-weight: 700; color: var(--primary); }
+
+    /* Map Area */
+    #map { flex: 1; background: #e5e7eb; }
+
+    /* Status Floating Bar */
+/* Status Floating Bar - 위치를 위로 올리고 가시성 개선 */
+#status-container {
+  position: absolute;
+  bottom: 60px; /* 기존 24px에서 60px로 올려서 하단 여유 공간 확보 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000; /* 지도보다 확실히 위에 오도록 인덱스 상향 */
+  pointer-events: none;
+}
+
+#status {
+  background: rgba(15, 23, 42, 0.95); /* 더 어둡고 불투명하게 하여 대비 강화 */
+  backdrop-filter: blur(10px);
+  color: #f8fafc; /* 글자색을 밝은 슬레이트 색으로 */
+  padding: 10px 24px; /* 상하좌우 패딩을 늘려 버튼처럼 보이게 함 */
+  border-radius: 50px;
+  font-size: 14px; /* 글자 크기 약간 키움 */
+  font-weight: 600;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1); /* 미세한 테두리로 경계 명확화 */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 120px;
+  text-align: center;
+}
+
+    /* Scrollbar Customization */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      #sidebar { width: 100%; position: absolute; height: 50%; z-index: 2000; }
+      #app { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div id="admin-header"></div>
+
+  <div id="admin-content">
+    <div id="app">
+      <!-- Sidebar -->
+      <aside id="sidebar">
+        <h1>Indoor Admin</h1>
+
+        <!-- Tab Navigation -->
+        <nav class="tabs">
+          <div class="tab active" data-mode="floor_new">등록</div>
+          <div class="tab" data-mode="floor_manage">관리</div>
+          <div class="tab" data-mode="edit">편집</div>
+        </nav>
+
+        <!-- View: Floor Registration -->
+        <div id="view-floor_new" class="view">
+          <div class="section">
+            <h3>건물 설정</h3>
+            <div class="row">
+              <input id="bName" placeholder="새 건물 이름 입력" />
+            </div>
+            <button id="btnAddBuilding">건물 추가</button>
+          </div>
+
+          <div class="section" style="margin-top: 16px;">
+            <h3>평면도 업로드</h3>
+            <div class="row">
+              <select id="fBuildingSel">
+                <option value="">건물 선택</option>
+              </select>
+              <input id="fFloorNum" placeholder="층 (예: 1)" type="number" />
+            </div>
+            <div style="margin-bottom: 12px;">
+              <input type="file" id="floorImageFile" accept="image/*" style="font-size: 12px; padding: 8px;" />
+            </div>
+            <button id="btnUploadImage" class="secondary">이미지 서버 업로드</button>
+            <input id="fImageUrl" placeholder="업로드된 URL (자동 입력)" style="margin-top: 8px;" />
+            <button id="btnAddFloor" style="margin-top: 12px;">평면도 등록 완료</button>
+          </div>
+        </div>
+
+        <!-- View: Floor Management -->
+        <div id="view-floor_manage" class="view" style="display:none;">
+          <div class="section">
+            <h3>필터링</h3>
+            <div class="row">
+              <input id="searchBuilding" placeholder="건물 ID" />
+              <input id="searchFloor" placeholder="층" />
+            </div>
+            <div id="floorList" class="list">
+              <!-- Items injected by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- View: Node/Edge Editing -->
+        <div id="view-edit" class="view" style="display:none;">
+          <div class="section">
+            <h3>편집 대상 선택</h3>
+            <div class="row">
+              <select id="selBuildingSel">
+                <option value="">건물 선택</option>
+              </select>
+              <input id="selFloor" placeholder="층" type="number" />
+            </div>
+            <button id="btnLoadFloor">데이터 불러오기</button>
+          </div>
+
+          <div class="section" style="margin-top: 16px;">
+            <h3>조작 가이드</h3>
+            <div class="tools-box">
+              <div><span>• 더블클릭:</span> 노드(지점) 추가</div>
+              <div><span>• 드래그:</span> 노드 위치 이동</div>
+              <div><span>• 2회 클릭:</span> 엣지(경로) 생성/수정</div>
+              <div><span>• ESC:</span> 선택 상태 초기화</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Bar (Bottom of Sidebar) -->
+        <div id="status-container">
+          <div id="status">Ready</div>
+        </div>
+      </aside>
+
+      <!-- Map Area -->
+      <main id="map"></main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script type="module" src="/js/admin/indoor/admin_indoor.js"></script>
+</body>
+</html>

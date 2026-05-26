@@ -1,0 +1,235 @@
+/* =========================================================
+   1. BASE & RESET
+   ========================================================= */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f1f5f9;
+}
+
+/* =========================================================
+   2. MAP LAYER (Full Screen)
+   ========================================================= */
+#map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* =========================================================
+   3. TOP STATUS BAR (Glassmorphism)
+   ========================================================= */
+#top-status-bar {
+    position: absolute;
+    top: env(safe-area-inset-top, 15px);
+    left: 15px;
+    right: 15px;
+    height: 44px;
+    z-index: 1000;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+#current-mode-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.mode-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: #e2e8f0;
+    color: #64748b;
+    font-weight: 600;
+}
+
+/* =========================================================
+   4. BOTTOM SHEET (네이버 지도식 레이어)
+   ========================================================= */
+.bottom-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: white;
+    z-index: 1001;
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 기본 상태: 핸들만 보임 */
+    transform: translateY(calc(100% - 50px));
+}
+
+/* 시트 확장 시 (검색/결과 창) */
+.bottom-sheet.expanded {
+    transform: translateY(0);
+}
+
+.sheet-handle {
+    width: 40px;
+    height: 5px;
+    background: #cbd5e1;
+    border-radius: 10px;
+    margin: 12px auto;
+}
+
+.sheet-content {
+    padding: 0 20px 30px 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* =========================================================
+   5. SEARCH SECTION
+   ========================================================= */
+.search-container {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.search-bar-wrapper {
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    border-radius: 14px;
+    padding: 4px 8px;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.search-bar-wrapper:focus-within {
+    background: white;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+#node-search-input {
+    flex: 1;
+    height: 40px;
+    border: none;
+    background: transparent;
+    font-size: 16px; /* iOS 줌 방지 */
+    outline: none;
+    color: #1e293b;
+}
+
+.btn-map-select {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    white-space: nowrap;
+}
+
+/* =========================================================
+   6. SUGGESTION LIST (자동 완성)
+   ========================================================= */
+.suggestion-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+    border-top: 1px solid #f1f5f9;
+}
+
+.suggestion-item {
+    padding: 14px 8px;
+    border-bottom: 1px solid #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.suggestion-item:active {
+    background-color: #f8fafc;
+}
+
+.suggestion-main {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.suggestion-sub {
+    font-size: 13px;
+    color: #64748b; /* [건물명] [n층] 정보 */
+}
+
+/* =========================================================
+   7. SELECTION CARD (결과 표시)
+   ========================================================= */
+.selection-card {
+    margin-top: 20px;
+    background: #f8fafc;
+    border-radius: 18px;
+    padding: 16px;
+}
+
+.selection-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.selection-row .label {
+    font-size: 14px;
+    color: #64748b;
+}
+
+.selection-row .value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.btn-route-run {
+    width: 100%;
+    height: 52px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: 700;
+    margin-top: 16px;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-reset {
+    width: 100%;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    margin-top: 12px;
+}
+
+/* 유틸리티 */
+.hidden { display: none !important; }

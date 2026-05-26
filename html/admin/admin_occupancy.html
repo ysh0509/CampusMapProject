@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Occupancy Analytics | 스마트 캠퍼스</title>
+
+  <script>
+    window.__ENV = {
+      SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+    };
+  </script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* [Design System] */
+    :root {
+      --bg-main: #f8fafc;
+      --card-bg: #ffffff;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --accent-blue: #3b82f6;
+      --accent-indigo: #6366f1;
+      --border: #e2e8f0;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+
+    body { margin:0; font-family: 'Pretendard', sans-serif; background: var(--bg-main); color: var(--text-primary); }
+    .page { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    
+    /* [Layout] */
+    .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    .section { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 24px; box-shadow: var(--shadow); }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .section h2 { margin: 0; font-size: 1.25rem; font-weight: 700; }
+
+    /* [Analysis Settings Panel] */
+    .analysis-panel { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+      gap: 16px; 
+      background: #f1f5f9;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+    .filter-group select, .filter-group button { 
+      padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: white; font-size: 14px; 
+    }
+    .btn-primary { background: var(--accent-blue) !important; color: white !important; border: none !important; cursor: pointer; font-weight: 600; }
+    .btn-primary:hover { opacity: 0.9; }
+
+    /* [Chart Area] */
+    .chart-container { width: 100%; height: 450px; position: relative; }
+
+    /* [Table Style] */
+    .table-container { overflow-x: auto; margin-top: 24px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #f8fafc; padding: 12px; text-align: left; color: var(--text-secondary); border-bottom: 2px solid var(--border); }
+    td { padding: 12px; border-bottom: 1px solid var(--border); }
+    
+    /* [Badges] */
+    .badge { padding: 4px 10px; border-radius: 999px; font-weight: 700; font-size: 11px; }
+    .badge.low { background: #dcfce7; color: #166534; }
+    .badge.mid { background: #fef9c3; color: #92400e; }
+    .badge.high { background: #fee2e2; color: #991b1b; }
+
+    /* [Pagination] */
+    .pagination { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px; }
+    .pagination button { padding: 6px 14px; border: 1px solid var(--border); border-radius: 8px; background: white; cursor: pointer; }
+
+    @media (max-width: 768px) {
+      .analysis-panel { grid-template-columns: 1fr; }
+      .section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="admin-header"></div>
+
+  <div id="admin-content">
+    <div class="page">
+      <div class="dashboard-grid">
+        
+        <!-- TOP: 분석 설정 섹션 -->
+        <div class="section">
+          <div class="section-header">
+            <h2>🔍 데이터 분석 설정 (Analysis Engine)</h2>
+          </div>
+          <div class="analysis-panel">
+            <div class="filter-group">
+              <label>대상 노드 (Target Node)</label>
+              <select id="filter-events-node">
+                <option value="all">모든 카메라 (All Nodes)</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label>분석 차원 (Dimension)</label>
+              <select id="filter-analysis-dimension">
+                <option value="raw">Raw (시계열 흐름)</option>
+                <option value="hour">시간대별 평균 (Hour of Day)</option>
+                <option value="weekday">요일별 평균 (Day of Week)</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label>공간 범위 (Scope)</label>
+              <select id="filter-events-scope">
+                <option value="">전체 (All)</option>
+                <option value="indoor">실내 (Indoor)</option>
+                <option value="outdoor">실외 (Outdoor)</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label>혼잡도 레벨 (Level)</label>
+              <select id="filter-events-level">
+                <option value="">전체 (All)</option>
+                <option value="LOW">LOW</option>
+                <option value="MID">MID</option>
+                <option value="HIGH">HIGH</option>
+              </select>
+            </div>
+
+            <div class="filter-group" style="justify-content: flex-end;">
+              <button id="btn-refresh-analysis" class="btn-primary">분석 실행 (Run Analysis)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MIDDLE: 차트 섹션 -->
+        <div class="section">
+          <div class="section-header">
+            <h2 id="chart-title">📈 실시간 혼잡도 추이</h2>
+            <div class="filter-group" style="flex-direction: row; align-items: center;">
+              <span style="font-size: 13px; margin-right: 8px;">차트 타입:</span>
+              <select id="filter-chart-type" style="padding: 4px 8px;">
+                <option value="line">Line (추이)</option>
+                <option value="bar">Bar (비교)</option>
+              </select>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="occupancy-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- BOTTOM: 데이터 리스트 섹션 -->
+        <div class="section">
+          <div class="section-header">
+            <h2>📋 최근 이벤트 로그</h2>
+          </div>
+          <div class="table-container">
+            <table id="events-table">
+              <thead>
+                <tr>
+                  <th>Node</th>
+                  <th>Scope</th>
+                  <th>혼잡도</th>
+                  <th>점유율</th>
+                  <th>인원</th>
+                  <th>각도</th>
+                  <th>ROI</th>
+                  <th>시각 (Timestamp)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- JS로 렌더링 -->
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button id="btn-prev-events">이전</button>
+            <span id="events-page-info">1 / 1</span>
+            <button id="btn-next-events">다음</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/admin/admin_occupancy.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+ultralytics==8.2.91
+opencv-python==4.9.0.80
+numpy==1.26.4
+supabase==2.4.0          # supabase-py v2
+python-dotenv==1.0.1

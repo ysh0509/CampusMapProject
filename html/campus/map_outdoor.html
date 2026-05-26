@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<script>
+   window.__ENV = {
+     SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+   };
+ </script>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Navigator</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-light: #eef2ff;
+  --bg-gray: #f6f7fb;
+  --text-main: #1e293b;
+  --text-sub: #64748b;
+  --glass: rgba(255, 255, 255, 0.85);
+}
+
+body, html { margin:0; padding:0; height:100%; width:100%; font-family:'Pretendard', system-ui, -apple-system, sans-serif; background: var(--bg-gray); overflow: hidden; }
+
+/* --- Landing Overlay (초기 화면) --- */
+#landing-overlay {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  background: linear-gradient(135deg, #8392ac 0%, #222b3f 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 10000; transition: opacity 0.5s ease, visibility 0.5s;
+  color: white; text-align: center;
+}
+#landing-overlay.hidden { opacity: 0; visibility: hidden; }
+
+.landing-content h1 { font-size: 3rem; margin-bottom: 1rem; letter-spacing: -1px; }
+.landing-content p { font-size: 1.2rem; color: #94a3b8; margin-bottom: 2.5rem; }
+.landing-btns { display: flex; gap: 16px; }
+.btn-main {
+  padding: 16px 32px; font-size: 1.1rem; font-weight: 700; border: none; border-radius: 14px;
+  cursor: pointer; transition: transform 0.2s, background 0.2s;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+.btn-main:hover { transform: translateY(-3px); }
+.btn-primary:hover { background: #1d4ed8; }
+
+/* --- Map & Main Layout --- */
+#map { height:100vh; width:100%; z-index: 1; }
+
+/* Panel UI */
+#panel {
+  position:absolute; top:16px; left:16px; width:380px; 
+  background: var(--glass); backdrop-filter: blur(12px);
+  border-radius:24px; padding:20px; 
+  box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); z-index:999;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+h1 { margin:0 0 16px 0; font-size:20px; color: var(--text-main); }
+
+.section { margin-top:16px; padding:16px; border:1px solid #e2e8f0; border-radius:16px; background:#fff; }
+.section-title { font-weight:700; font-size:14px; color:var(--text-main); margin-bottom:12px; }
+
+.toggle-group { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+.toggle {
+  padding:10px; border:2px solid #f1f5f9; border-radius:12px;
+  background:#f8fafc; cursor:pointer; text-align:center; font-size:13px; color:var(--text-sub); transition: all 0.2s;
+}
+.toggle.active { border-color:var(--primary); color:var(--primary); background:var(--primary-light); font-weight:700; }
+
+.row { display:flex; gap:8px; margin-top:8px; }
+.half { flex:1; }
+label { display:block; font-size:12px; color:var(--text-sub); margin-bottom:4px; }
+input, select {
+  width:100%; padding:10px; border:1px solid #dfe3ec; border-radius:10px;
+  font-size:13px; box-sizing:border-box; background:#fff;
+}
+
+.accordion { display:none; margin-top:12px; }
+button {
+  width:100%; padding:12px; margin-top:10px; border:none; border-radius:12px;
+  background:var(--primary); color:#fff; font-weight:700; cursor:pointer; font-size:14px; transition: opacity 0.2s;
+}
+button.secondary { background:#e5e7eb; color:#111827; }
+button.ghost { background:transparent; color:var(--primary); border:1px solid var(--primary); }
+button:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* Steps/Navigation Panel */
+#steps {
+  position:absolute; top:16px; right:16px; width:340px; max-height:85vh;
+  background:var(--glass); backdrop-filter: blur(12px);
+  border-radius:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);
+  z-index:999; display:flex; flex-direction:column; overflow:hidden;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+#stepsHeader { padding:16px; background:#1e293b; color:#fff; font-weight:bold; display:flex; justify-content:space-between; align-items:center; }
+#stepsBody { padding:16px; overflow-y:auto; flex:1; }
+
+/* Route Cards (개선된 카드형 UI) */
+.route-card {
+  padding:14px; border:2px solid #f1f5f9; border-radius:16px; margin-bottom:12px;
+  cursor:pointer; transition: all 0.2s; background: #fff;
+}
+.route-card.active { border-color: var(--primary); background: var(--primary-light); }
+.route-card.disabled { opacity: 0.5; cursor: not-allowed; background: #f1f5f9; }
+
+.guide-text {
+  margin-top:12px; padding:12px; background:#f8fafc; border-radius:12px;
+  font-size:13px; line-height:1.6; color:var(--text-main); border-left:4px solid var(--primary);
+}
+.guide-node { font-weight: 600; color: var(--primary); }
+.guide-arrow { color: #cbd5e1; margin: 0 4px; }
+
+#status { font-size:12px; margin-top:12px; color:var(--text-sub); text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- 1. Landing Overlay (초기 화면) -->
+<div id="landing-overlay">
+  <div class="landing-content">
+    <h1>Campus Navigator</h1>
+    <p>AI 기반 스마트 캠퍼스 실시간 경로 안내 서비스</p>
+    <div class="landing-btns">
+      <button class="btn-main btn-primary" onclick="startApp()">서비스 시작하기</button>
+      <button class="btn-main btn-secondary" onclick="location.href='/html/campus/map_indoor.html'">실내 지도 바로가기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Main Navigation UI -->
+<div id="panel">
+  <h1>Campus Navigator</h1>
+
+  <!-- 출발지 -->
+  <div class="section">
+    <div class="section-title">📍 출발지</div>
+    <div class="toggle-group" id="startToggle">
+      <div class="toggle" data-type="outdoor">외부</div>
+      <div class="toggle" data-type="indoor">내부</div>
+    </div>
+    <div class="accordion" id="startIndoorBox">
+      <div class="row">
+        <div class="half">
+          <label>건물</label>
+          <select id="startBuilding"><option value="">건물 선택</option></select>
+        </div>
+        <div class="half">
+          <label>실내 노드</label>
+          <select id="startIndoorNode"><option value="">강의실/노드</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="half">
+          <label>강의실 번호(검색)</label>
+          <input id="startRoomInput" placeholder="예: 401" />
+        </div>
+        <div class="half" style="align-self:flex-end;font-size:11px;color:#94a3b8;padding-bottom:10px;">
+          외부 선택 시 지도 노드 클릭
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 도착지 -->
+  <div class="section">
+    <div class="section-title">🏁 도착지</div>
+    <div class="toggle-group" id="endToggle">
+      <div class="toggle" data-type="outdoor">외부</div>
+      <div class="toggle" data-type="indoor">내부</div>
+    </div>
+    <div class="accordion" id="endIndoorBox">
+      <div class="row">
+        <div class="half">
+          <label>건물</label>
+          <select id="endBuilding"><option value="">건물 선택</option></select>
+        </div>
+        <div class="half">
+          <label>실내 노드</label>
+          <select id="endIndoorNode"><option value="">강의실/노드</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="half">
+          <label>강의실 번호(검색)</label>
+          <input id="endRoomInput" placeholder="예: 401" />
+        </div>
+        <div class="half" style="align-self:flex-end;font-size:11px;color:#94a3b8;padding-bottom:10px;">
+          외부 선택 시 지도 노드 클릭
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button id="runRoute">경로 찾기</button>
+  <button id="viewIndoor" class="ghost" disabled>실내 구간 보기</button>
+  <button id="reset" class="secondary">초기화 (ESC)</button>
+
+  <div id="status">출발/도착 유형을 선택하세요</div>
+</div>
+
+<!-- 3. Navigation Details Panel -->
+<div id="steps">
+  <div id="stepsHeader">
+    <span>📍 Navigation Details</span>
+  </div>
+  <div id="stepsBody">
+    <!-- 경로 카드 및 가이드가 여기에 동적으로 삽입됨 -->
+  </div>
+</div>
+
+<!-- 4. Map Layer -->
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script type="module" src="../../js/campus/map_outdoor.js"></script>
+
+<script>
+  // 초기 화면 제어 함수
+  function startApp() {
+    const overlay = document.getElementById('landing-overlay');
+    overlay.classList.add('hidden');
+  }
+</script>
+</body>
+</html>

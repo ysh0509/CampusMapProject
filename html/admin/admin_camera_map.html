@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<script>
+  window.__ENV = {
+    SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+  };
+</script>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Camera ↔ Node/Edge Mapping</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #f3f4f6; }
+
+    #admin-content { height: calc(100vh - 60px); }
+
+    .cam-map {
+      height: 100%;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+
+    .cam-map .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr 1fr;
+      gap: 12px;
+      height: 100%;
+    }
+
+    .cam-map .panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.05);
+      overflow: auto;
+      min-height: 0;
+    }
+
+    .cam-map .panel2.full {
+      grid-column: 2 / 4;
+    }
+
+
+    .cam-map h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+    }
+
+    .cam-map .row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .cam-map .row > * { flex: 1; }
+
+    .cam-map input,
+    .cam-map select,
+    .cam-map textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    .cam-map textarea {
+      min-height: 90px;
+      font-family: ui-monospace, monospace;
+      resize: vertical;
+    }
+
+    .cam-map .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .cam-map .btn-row button {
+      flex: 1;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 10px;
+      color: #fff;
+      background: #2563eb;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .cam-map .btn-row button.gray { background: #6b7280; }
+    .cam-map .btn-row button.red { background: #dc2626; }
+
+    .cam-map .muted {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .cam-map .list {
+      border: 1px solid #eee;
+      border-radius: 8px;
+      max-height: 260px;
+      overflow: auto;
+      background: #fff;
+    }
+
+    .cam-map .item {
+      padding: 8px;
+      border-bottom: 1px solid #f1f1f1;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .cam-map .item:last-child { border-bottom: none; }
+    .cam-map .item.active { background: #eef6ff; }
+
+    .cam-map .legend {
+      display: flex;
+      gap: 10px;
+      font-size: 12px;
+      margin-bottom: 8px;
+      color: #374151;
+    }
+
+    .cam-map .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    .cam-map .edge {
+      width: 12px;
+      height: 3px;
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    .cam-map #outdoor-map {
+      width: 100%;
+      height: calc(100% - 34px);
+      border-radius: 10px;
+      min-height: 420px;
+    }
+
+    .cam-map .floor-wrap {
+      position: relative;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #111;
+      min-height: 420px;
+      height: calc(100% - 34px);
+    }
+
+    .cam-map #floor-img {
+      width: 100%;
+      display: block;
+      user-select: none;
+    }
+
+    .cam-map #floor-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    @media (max-width: 1300px) {
+      #admin-content { height: auto; }
+      .cam-map .layout { grid-template-columns: 1fr; height: auto; }
+      .cam-map #outdoor-map { height: 420px; }
+      .cam-map .floor-wrap { height: 420px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="admin-header"></div>
+
+  <div id="admin-content">
+    <div class="cam-map">
+      <div class="layout">
+        <div class="panel">
+          <h3>카메라 ↔ 노드/엣지 매핑</h3>
+
+          <div class="row">
+            <select id="camera_id"></select>
+            <select id="target_type">
+              <option value="node">node</option>
+              <option value="edge">edge</option>
+            </select>
+          </div>
+
+          <div class="row">
+            <select id="node_scope">
+              <option value="outdoor">outdoor</option>
+              <option value="indoor">indoor</option>
+            </select>
+            <input id="selected_target" placeholder="선택된 target id (자동)" readonly />
+          </div>
+
+          <div class="row">
+            <select id="building_id">
+              <option value="">건물 선택</option>
+            </select>
+            <select id="floor_id">
+              <option value="">층 선택</option>
+            </select>
+          </div>
+
+          <div class="muted" style="margin-bottom:6px;">roi_json (선택)</div>
+          <textarea id="roi_json" placeholder='{"zones":[...]}'></textarea>
+
+          <div class="btn-row">
+            <button id="btn_new" class="gray" type="button">신규</button>
+            <button id="btn_save" type="button">저장/수정</button>
+            <button id="btn_delete" class="red" type="button">삭제</button>
+          </div>
+
+          <div id="status" class="muted" style="margin-bottom:8px;">ready</div>
+
+          <h3 style="margin-top:12px;">기존 매핑</h3>
+          <div id="map_list" class="list"></div>
+        </div>
+
+        <div class="panel panel2">
+          <h3>Outdoor 선택(지도 클릭)</h3>
+          <div class="legend">
+            <span><span class="dot" style="background:#2563eb;"></span>노드</span>
+            <span><span class="edge" style="background:#f59e0b;"></span>엣지</span>
+          </div>
+          <div id="outdoor-map"></div>
+        </div>
+
+        <div class="panel panel2">
+          <h3>Indoor 선택(건물/층 + 평면도 클릭)</h3>
+          <div class="legend">
+            <span><span class="dot" style="background:#22c55e;"></span>노드</span>
+            <span><span class="edge" style="background:#ef4444;"></span>엣지</span>
+          </div>
+          <div class="floor-wrap">
+            <img id="floor-img" />
+            <svg id="floor-svg"></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script type="module" src="/js/admin/admin_camera_map.js"></script>
+</body>
+</html>

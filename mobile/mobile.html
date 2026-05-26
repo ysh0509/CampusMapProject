@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<script>
+  window.__ENV = {
+    SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+  };
+</script>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Campus Mobile</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- 모바일 전용 스타일 -->
+    <link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+
+    <!-- 1. 지도 영역: Leaflet이 전체 화면을 채웁니다 -->
+    <div id="map"></div>
+
+    <!-- 2. 상단 상태 표시줄: 현재 모드(실내/실외) 및 시스템 상태 표시 -->
+    <div id="top-status-bar" class="glass-effect">
+        <span id="current-mode-text">실외 경로 탐색</span>
+        <span class="mode-badge" id="status-badge">GPS 대기 중</span>
+    </div>
+
+    <!-- 3. 하단 시트 (Bottom Sheet): 검색 및 경로 설정의 핵심 UI -->
+    <div id="bottom-sheet" class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        
+        <div class="sheet-content">
+            
+            <!-- [A] 검색 섹션: 네이버 지도 스타일의 입력창과 추천 리스트 -->
+            <div id="search-section" class="search-container">
+                <div class="search-bar-wrapper">
+                    <input type="text" id="node-search-input" placeholder="건물, 층, 또는 장소 검색..." autocomplete="off">
+                    <button id="btn-map-select" class="btn-map-select">📍 지도 선택</button>
+                </div>
+
+                <!-- 자동 완성 추천 리스트 (JS에서 검색 결과에 따라 동적 생성) -->
+                <ul id="suggestion-list" class="suggestion-list hidden">
+                    <!-- 예시 구조:
+                    <li class="suggestion-item" data-id="in_123">
+                        <div class="suggestion-info">
+                            <span class="suggestion-main">중앙관 로비</span>
+                            <span class="suggestion-sub">중앙관 1층 중앙관 로비</span>
+                        </div>
+                    </li>
+                    -->
+                </ul>
+            </div>
+
+            <!-- [B] 선택 상태 카드: 출발지와 도착지가 결정되었을 때 나타남 -->
+            <div id="selection-card" class="selection-card hidden">
+                <div class="selection-row">
+                    <span class="label">출발지</span>
+                    <span id="start-display" class="value">미선택</span>
+                </div>
+                <div class="selection-row">
+                    <span class="label">도착지</span>
+                    <span id="end-display" class="value">미선택</span>
+                </div>
+                
+                <!-- 경로 모드 선택 (기존 COST_ORDER 반영) -->
+                <div class="route-mode-selector" style="margin: 15px 0; display: flex; justify-content: space-between; font-size: 13px; color: #64748b;">
+                    <label><input type="radio" name="cost-mode" value="optimal" checked> 최적</label>
+                    <label><input type="radio" name="cost-mode" value="fastest"> 최단시간</label>
+                    <label><input type="radio" name="cost-mode" value="stairs_avoid"> 계단회피</label>
+                </div>
+
+                <button id="btn-run-route" class="btn-route-run">경로 찾기</button>
+                <button id="btn-reset-selection" class="btn-reset">초기화</button>
+            </div>
+
+            <!-- [C] 경로 결과 섹션: 경로 탐색 완료 후 결과 카드 리스트 -->
+            <div id="route-results" class="route-results hidden">
+                <!-- JS에서 생성: <div class="route-card">...</div> -->
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- 모바일 전용 로직 (ES Modules) -->
+    <script type="module" src="mobile.js"></script>
+</body>
+</html>

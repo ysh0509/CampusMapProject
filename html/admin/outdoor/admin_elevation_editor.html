@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<script>
+  window.__ENV = {
+    SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+  };
+</script>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>고도 편집</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <link rel="stylesheet" href="/admin.css" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    #map {
+      height: calc(100vh - 60px);
+    }
+
+    /* ✅ 패널 */
+    .panel {
+      position: fixed;
+      top: 80px; /* ✅ 헤더 아래로 내림 */
+      left: 20px;
+      z-index: 3000; /* ✅ 헤더보다 높게 */
+
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 240px;
+    }
+
+    .panel h3 {
+      margin: 0 0 10px;
+    }
+
+    .panel input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+
+    .panel button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 6px;
+      border: none;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+
+    .panel button:hover {
+      background: #1d4ed8;
+    }
+
+    .info {
+      font-size: 12px;
+      margin-top: 8px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="admin-header"></div>
+
+  <div id="map"></div>
+
+  <div class="panel">
+    <h3>고도 편집</h3>
+
+    <input id="elevation-input" type="number" placeholder="meters" />
+    <button onclick="selectAllNodes()">전체 선택</button>
+    <button onclick="clearSelection()">선택 해제</button>
+    <button onclick="applyElevation()">선택 노드 적용</button>
+    <button onclick="autoFillElevation()">자동 고도 입력</button>
+    <button onclick="selectNoElevation()">고도 없는 노드 선택</button>
+    <button onclick="lockNodes()">선택 잠금 🔒</button>
+    <button onclick="unlockNodes()">잠금 해제 🔓</button>
+    <div class="info" id="selection-info">선택: 0개</div>
+    <div class="info" id="status-text">대기중</div>
+
+  </div>
+
+  <script type="module" src="/js/admin/outdoor/admin_elevation_editor.js"></script>
+</body>
+</html>

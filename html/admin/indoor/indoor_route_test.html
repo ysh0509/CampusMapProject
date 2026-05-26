@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<script>
+  window.__ENV = {
+    SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+  };
+</script>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Indoor Route Test</title>
+
+<style>
+    body { margin:0; }
+    #panel {
+      position:fixed;
+      top:10px;
+      left:10px;
+      background:#fff;
+      padding:10px;
+      z-index:999;
+    }
+  </style>
+</head>
+<body>
+
+<div id="panel">
+  <button onclick="loadTest()">테스트 경로 로드</button>
+  <button onclick="clearRoute()">초기화</button>
+</div>
+
+<script>
+function loadTest() {
+
+  const test = [[
+    {id:1,x:100,y:200,floor_id:1,type:'walk'},
+    {id:2,x:200,y:200,floor_id:1,type:'walk'},
+    {id:3,x:300,y:200,floor_id:2,type:'elevator'}
+  ]];
+
+  localStorage.setItem('indoorRoute', JSON.stringify(test));
+  location.href = '/map_indoor.html';
+}
+
+function clearRoute() {
+  localStorage.removeItem('indoorRoute');
+}
+</script>
+
+</body>
+</html>
