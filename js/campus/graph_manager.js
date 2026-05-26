@@ -322,6 +322,8 @@ export async function loadGraph() {
   ========================================================= */
   const edgeMap = new Map();
 
+  const nodeDegreeMap = new Map();
+
   /* =========================================================
      GRAPH ADD
   ========================================================= */
@@ -335,6 +337,8 @@ export async function loadGraph() {
       to,
       edge
     });
+  nodeDegreeMap.set(from, (nodeDegreeMap.get(from) || 0) + 1);
+  nodeDegreeMap.set(to, (nodeDegreeMap.get(to) || 0) + 1);
   }
 
   /* =========================================================
@@ -399,6 +403,8 @@ export async function loadGraph() {
 
     nodeMap,
 
-    edgeMap
+    edgeMap,
+
+    nodeDegreeMap
   };
 }

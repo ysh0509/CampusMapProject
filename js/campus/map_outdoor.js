@@ -104,68 +104,66 @@ function bindUI() {
 
 // 4. 핵심 기능: 경로 계산 및 가이드 생성
 
+
 /**
- * [핵심 요구사항] 공백 노드를 제외한 경로 상세 텍스트 생성
+ * [최종 완성본] 거점 중심의 경로 가이드 생성 함수
+ * 1. 첫 번째 노드는 무조건 '출발지'로 표시
+ * 2. 마지막 노드는 무조건 '도착지'로 표시
+ * 3. 중간 노드들은 '연결된 엣지가 6개 이상인 거점'이면서 '이름이 있는 경우'에만 표시
  */
-/**
- * [사용자 제안 반영]
- * ID가 'in_'으로 시작하면 'in_'을 제거한 ID로, 
- * 아니면 원본 ID로 nodeMap에서 직접 찾아 이름을 가져옵니다.
- */
-function generateGuideText(path, nodeMap) {
+function generateGuideText(path, nodeMap, nodeDegreeMap) {
   if (!path || path.length === 0) return '경로 정보가 없습니다.';
 
-  const validNodes = path
-    .map(id => {
-      let targetId = id;
-      const strId = String(id);
+  // 1. 경로상의 모든 노드를 순회하며 필터링된 이름 배열 생성
+  const meaningfulNodes = path.map((id, index) => {
+    let targetId = id;
+    const strId = String(id);
 
-      // 1. 'in_'이 붙어있다면 'in_'을 제거한 순수 ID만 추출
-      if (strId.startsWith('in_')) {
-        targetId = strId.replace('in_', '');
-      }
+    // 'in_' 접두어 처리
+    if (strId.startsWith('in_')) {
+      targetId = strId.replace('in_', '');
+    }
 
-      // 2. nodeMap에서 검색 (숫자형 ID와 문자열 ID 모두 대응)
-      // 먼저 숫자형으로 시도해보고, 안되면 문자열로 시도
-      let node = nodeMap.get(Number(targetId)) || nodeMap.get(targetId) || nodeMap.get(strId);
+    // nodeMap에서 노드 검색
+    const node = nodeMap.get(Number(targetId)) || nodeMap.get(targetId) || nodeMap.get(strId);
+    if (!node) return null;
 
-      // 3. 만약 위 방법으로도 못 찾았다면, 'in_'이 붙은 형태 그대로 다시 시도
-      if (!node) {
-        node = nodeMap.get(strId);
-      }
+    // --- [핵심 로직: 시작/끝/거점 구분] ---
+    const isStart = (index === 0);
+    const isEnd = (index === path.length - 1);
+    
+    // 시작과 끝은 이름이 무엇이든 무조건 고유 명칭 부여
+    if (isStart) return '출발지';
+    if (isEnd) return '도착지';
 
-      // 4. 노드가 있고 name이 있으면 반환, 아니면 null
-      const name = (node && node.name) ? node.name.trim() : null;
-      return name || null;
-    })
-    .filter(name => name !== null); // 이름이 없는 노드는 경로에서 제외
+    // 중간 노드들은 거점(Degree >= 6)이면서 이름이 있는 경우만 반환
+    const degree = (nodeDegreeMap && nodeDegreeMap.get(strId)) || 0;
+    const isHub = degree >= 6;
+    const name = node.name ? node.name.trim() : null;
 
-  if (validNodes.length === 0) return '이동 가능한 지점 명칭이 없습니다.';
-  if (validNodes.length === 1) return `📍 ${validNodes[0]}`;
+    if (isHub && name) {
+      return name;
+    }
 
-  // 5. 출발지 > 경유지 > 도착지 형식으로 조립
-  // 출발지와 도착지는 이름이 없어도 '출발지', '도착지'로 표시하여 흐름 유지
-  const startName = validNodes[0] || '출발지';
-  const endName = validNodes[validNodes.length - 1] || '도착지';
+    return null; // 거점이 아니거나 이름이 없으면 제외
+  }).filter(name => name !== null); // null(필터링된 노드) 제거
+
+  // 2. 결과가 없는 경우 예외 처리
+  if (meaningfulNodes.length === 0) return '📍 경로를 계산 중입니다...';
   
-  // 중간 경유지들 (이름이 있는 것들만)
-  const middleNodes = validNodes.slice(1, -1);
+  // 3. 중복 제거 (연속된 노드가 같은 이름을 가질 경우 대비)
+  const uniqueNodes = meaningfulNodes.filter((name, idx) => name !== meaningfulNodes[idx - 1]);
 
-  let result = `<span class="guide-node">${startName}</span>`;
+  // 4. 최종 HTML 조립
+  // [출발지] → [거점A] → [거점B] → [도착지]
+  let result = `<span class="guide-node">${uniqueNodes[0]}</span>`;
   
-  middleNodes.forEach(name => {
-    result += ` <span class="guide-arrow">→</span> <span class="guide-node">${name}</span>`;
-  });
-
-  // 경로가 2개 이상의 노드로 구성되어 있다면 마지막에 도착지 연결
-  if (path.length > 1) {
-    result += ` <span class="guide-arrow">→</span> <span class="guide-node">${endName}</span>`;
+  for (let i = 1; i < uniqueNodes.length; i++) {
+    result += ` <span class="guide-arrow">→</span> <span class="guide-node">${uniqueNodes[i]}</span>`;
   }
 
   return result;
 }
-
-
 
 
 /**
@@ -238,35 +236,41 @@ async function runRoute() {
 /**
  * 경로 카드 렌더링 (개선된 UI 대응)
  */
+// map_outdoor.js 내부 renderRoutes 함수
+
 function renderRoutes() {
   if (!stepsBody) return;
   stepsBody.innerHTML = '';
-
+  
   state.routes.forEach((r, i) => {
     const card = document.createElement('div');
     card.className = `route-card ${r.disabled ? 'disabled' : ''} ${i === state.activeRoute ? 'active' : ''}`;
     
-    // 카드 상단: 타입 및 시간
     const header = document.createElement('div');
-    header.innerHTML = r.disabled 
-      ? '<span style="color:#94a3b8;">❌ 이용 불가</span>' 
+    header.innerHTML = r.disabled
+      ? '<span style="color:#94a3b8;">❌ 이용 불가</span>'
       : `<b>${label(r.type)}</b> <span style="float:right; font-size:12px;">⏱ ${r.time}분</span>`;
     card.appendChild(header);
 
-    // 카드 하단: 선택된 경우에만 상세 가이드(공백 제외 로직 적용) 표시
     if (i === state.activeRoute && !r.disabled) {
       const guide = document.createElement('div');
       guide.className = 'guide-text';
-      guide.innerHTML = generateGuideText(r.path, state.graph.nodeMap);
+      
+      // ✅ 수정된 호출 방식: nodeDegreeMap을 함께 전달
+      // 만약 state.graph.nodeDegreeMap이 없다면 빈 Map을 전달하여 에러 방지
+      const degreeMap = (state.graph && state.graph.nodeDegreeMap) ? state.graph.nodeDegreeMap : new Map();
+      guide.innerHTML = generateGuideText(r.path, state.graph.nodeMap, degreeMap);
+      
       card.appendChild(guide);
     }
-
+    
     if (!r.disabled) {
       card.onclick = () => setActive(i);
     }
     stepsBody.appendChild(card);
   });
 }
+
 
 /**
  * 경로 선택 시 지도 및 UI 업데이트

@@ -11,112 +11,242 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Campus Navigator</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
 <style>
 :root {
-  --primary: #2563eb;
-  --primary-light: #eef2ff;
-  --bg-gray: #f6f7fb;
-  --text-main: #1e293b;
+  --index-bg-dark: #0f172a;
+  --index-primary: #3b82f6;
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-light: #eff6ff;
+  --bg-main: #f8fafc;
+  --text-main: #0f172a;
   --text-sub: #64748b;
-  --glass: rgba(255, 255, 255, 0.85);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --card-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.08);
+  --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
-body, html { margin:0; padding:0; height:100%; width:100%; font-family:'Pretendard', system-ui, -apple-system, sans-serif; background: var(--bg-gray); overflow: hidden; }
+body, html { margin:0; padding:0; height:100%; width:100%; font-family:'Pretendard', system-ui, -apple-system, sans-serif; background: var(--bg-main); overflow: hidden; }
 
-/* --- Landing Overlay (초기 화면) --- */
+/* --- Landing Overlay --- */
 #landing-overlay {
   position: fixed; top:0; left:0; width:100%; height:100%;
-  background: linear-gradient(135deg, #8392ac 0%, #222b3f 100%);
+  background-color: var(--index-bg-dark); 
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  z-index: 10000; transition: opacity 0.5s ease, visibility 0.5s;
+  z-index: 10000; 
+  transition: 
+    opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1), 
+    visibility 1.5s, 
+    filter 1.5s cubic-bezier(0.4, 0, 0.2, 1), 
+    background-color 1.5s cubic-bezier(0.4, 0, 0.2, 1);
   color: white; text-align: center;
 }
-#landing-overlay.hidden { opacity: 0; visibility: hidden; }
 
-.landing-content h1 { font-size: 3rem; margin-bottom: 1rem; letter-spacing: -1px; }
-.landing-content p { font-size: 1.2rem; color: #94a3b8; margin-bottom: 2.5rem; }
-.landing-btns { display: flex; gap: 16px; }
+#landing-overlay.hidden { 
+  opacity: 0; 
+  visibility: hidden; 
+  filter: blur(30px); 
+  background-color: var(--bg-main); 
+}
+
+/* --- Text Reveal Animation (글씨가 떠오르는 효과) --- */
+.landing-content h1 { 
+  font-size: 3.5rem; margin-bottom: 1rem; letter-spacing: -1.5px; 
+  background: linear-gradient(to right, #ffffff, var(--index-primary));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  /* 애니메이션 초기 상태 */
+  opacity: 0;
+  transform: translateY(30px);
+  animation: revealText 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.3s;
+}
+
+.landing-content p { 
+  font-size: 1.25rem; color: #94a3b8; margin-bottom: 3rem; 
+  /* 애니메이션 초기 상태 */
+  opacity: 0;
+  transform: translateY(30px);
+  animation: revealText 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.6s;
+}
+
+.landing-btns { 
+  display: flex; gap: 20px; 
+  /* 애니메이션 초기 상태 */
+  opacity: 0;
+  transform: translateY(20px);
+  animation: revealText 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.9s;
+}
+
+@keyframes revealText {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Advanced Button Interactions --- */
 .btn-main {
-  padding: 16px 32px; font-size: 1.1rem; font-weight: 700; border: none; border-radius: 14px;
-  cursor: pointer; transition: transform 0.2s, background 0.2s;
+  padding: 16px 40px; font-size: 1.1rem; font-weight: 600; border: none; border-radius: 50px;
+  cursor: pointer; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.btn-primary { background: var(--primary); color: white; }
-.btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
-.btn-main:hover { transform: translateY(-3px); }
-.btn-primary:hover { background: #1d4ed8; }
 
-/* --- Map & Main Layout --- */
+.btn-primary { 
+  background: var(--index-primary); color: white; 
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+}
+
+.btn-primary:hover { 
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-primary:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+.btn-secondary { 
+  background: rgba(255,255,255,0.05); color: white; 
+  border: 1px solid rgba(255,255,255,0.2); 
+}
+
+.btn-secondary:hover { 
+  background: rgba(255,255,255,0.12);
+  transform: translateY(-5px);
+  border-color: rgba(255,255,255,0.4);
+}
+
+/* --- Map & UI (기존과 동일) --- */
 #map { height:100vh; width:100%; z-index: 1; }
-
-/* Panel UI */
 #panel {
-  position:absolute; top:16px; left:16px; width:380px; 
-  background: var(--glass); backdrop-filter: blur(12px);
-  border-radius:24px; padding:20px; 
-  box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); z-index:999;
-  border: 1px solid rgba(255,255,255,0.3);
+  position:absolute; top:24px; left:24px; width:350px; 
+  background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-radius:28px; padding:24px; 
+  box-shadow: var(--card-shadow); z-index:999;
+  border: 1px solid var(--glass-border);
 }
-h1 { margin:0 0 16px 0; font-size:20px; color: var(--text-main); }
-
-.section { margin-top:16px; padding:16px; border:1px solid #e2e8f0; border-radius:16px; background:#fff; }
-.section-title { font-weight:700; font-size:14px; color:var(--text-main); margin-bottom:12px; }
-
-.toggle-group { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-.toggle {
-  padding:10px; border:2px solid #f1f5f9; border-radius:12px;
-  background:#f8fafc; cursor:pointer; text-align:center; font-size:13px; color:var(--text-sub); transition: all 0.2s;
-}
-.toggle.active { border-color:var(--primary); color:var(--primary); background:var(--primary-light); font-weight:700; }
-
-.row { display:flex; gap:8px; margin-top:8px; }
+h1 { margin:0 0 20px 0; font-size:22px; color: var(--text-main); font-weight: 800; }
+.section { margin-top:18px; padding:18px; border:1px solid #f1f5f9; border-radius:20px; background: rgba(255,255,255,0.6); }
+.section-title { font-weight:700; font-size:14px; color:var(--text-main); margin-bottom:14px; display: flex; align-items: center; }
+.toggle-group { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+.toggle { padding:12px; border:1px solid #e2e8f0; border-radius:14px; background:#fff; cursor:pointer; text-align:center; font-size:13px; color:var(--text-sub); transition: all 0.2s; }
+.toggle.active { border-color:var(--primary); color:var(--primary); background:var(--primary-light); font-weight:700; box-shadow: 0 0 0 1px var(--primary); }
+.row { display:flex; gap:10px; margin-top:10px; }
 .half { flex:1; }
-label { display:block; font-size:12px; color:var(--text-sub); margin-bottom:4px; }
-input, select {
-  width:100%; padding:10px; border:1px solid #dfe3ec; border-radius:10px;
-  font-size:13px; box-sizing:border-box; background:#fff;
-}
-
-.accordion { display:none; margin-top:12px; }
-button {
-  width:100%; padding:12px; margin-top:10px; border:none; border-radius:12px;
-  background:var(--primary); color:#fff; font-weight:700; cursor:pointer; font-size:14px; transition: opacity 0.2s;
-}
-button.secondary { background:#e5e7eb; color:#111827; }
-button.ghost { background:transparent; color:var(--primary); border:1px solid var(--primary); }
+label { display:block; font-size:12px; color:var(--text-sub); margin-bottom:6px; font-weight: 500; }
+input, select { width:100%; padding:12px; border:1px solid #e2e8f0; border-radius:12px; font-size:13px; box-sizing:border-box; background:#fff; transition: all 0.2s; color: var(--text-main); }
+input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+.accordion { display:none; margin-top:14px; }
+button { width:100%; padding:14px; margin-top:12px; border:none; border-radius:14px; background: var(--accent-gradient); color:#fff; font-weight:700; cursor:pointer; font-size:14px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25); }
+button.secondary { background:#f1f5f9; color:#475569; box-shadow: none; border: 1px solid #e2e8f0; }
+button.ghost { background:transparent; color:var(--primary); border:1.5px solid var(--primary); box-shadow: none; }
+button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); }
 button:disabled { opacity:0.4; cursor:not-allowed; }
+#steps { position:absolute; top:24px; right:24px; width:340px; max-height:85vh; background: var(--glass-bg); backdrop-filter: blur(20px); border-radius:28px; box-shadow: var(--card-shadow); z-index:999; display:flex; flex-direction:column; overflow:hidden; border: 1px solid var(--glass-border); }
+#stepsHeader { padding:18px; background: rgba(15, 23, 42, 0.05); color: var(--text-main); font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+/* --- Navigation Details Panel 개선 --- */
 
-/* Steps/Navigation Panel */
-#steps {
-  position:absolute; top:16px; right:16px; width:340px; max-height:85vh;
-  background:var(--glass); backdrop-filter: blur(12px);
-  border-radius:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);
-  z-index:999; display:flex; flex-direction:column; overflow:hidden;
-  border: 1px solid rgba(255,255,255,0.3);
+/* 스크롤 가능한 바디 */
+#stepsBody {
+  padding: 16px;
+  overflow-y: auto; /* 세로 스크롤 허용 */
+  flex: 1;
+  scrollbar-width: thin; /* 파이어폭스용 */
+  scrollbar-color: var(--primary-light) transparent;
 }
-#stepsHeader { padding:16px; background:#1e293b; color:#fff; font-weight:bold; display:flex; justify-content:space-between; align-items:center; }
-#stepsBody { padding:16px; overflow-y:auto; flex:1; }
 
-/* Route Cards (개선된 카드형 UI) */
-.route-card {
-  padding:14px; border:2px solid #f1f5f9; border-radius:16px; margin-bottom:12px;
-  cursor:pointer; transition: all 0.2s; background: #fff;
+/* 스크롤바 스타일 (Chrome, Safari) */
+#stepsBody::-webkit-scrollbar {
+  width: 5px;
 }
-.route-card.active { border-color: var(--primary); background: var(--primary-light); }
-.route-card.disabled { opacity: 0.5; cursor: not-allowed; background: #f1f5f9; }
-
-.guide-text {
-  margin-top:12px; padding:12px; background:#f8fafc; border-radius:12px;
-  font-size:13px; line-height:1.6; color:var(--text-main); border-left:4px solid var(--primary);
+#stepsBody::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: 10px;
 }
-.guide-node { font-weight: 600; color: var(--primary); }
-.guide-arrow { color: #cbd5e1; margin: 0 4px; }
 
-#status { font-size:12px; margin-top:12px; color:var(--text-sub); text-align: center; }
+/* 가이드 리스트 컨테이너 */
+.guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* 단계 사이의 간격 */
+  position: relative;
+}
+
+/* 각 단계(Step) 스타일 */
+.guide-step {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  position: relative;
+  z-index: 1;
+}
+
+/* 시작과 끝 강조 */
+.step-start {
+  border-left: 4px solid #10b981; /* 초록색 포인트 */
+  background: #f0fdf4;
+}
+.step-end {
+  border-left: 4px solid #f59e0b; /* 오렌지색 포인트 */
+  background: #fffbeb;
+}
+
+/* 아이콘 스타일 */
+.step-icon {
+  font-size: 1.2rem;
+  margin-right: 12px;
+  width: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+/* 이름 스타일 */
+.step-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* 단계 사이를 잇는 수직선 (Visual Connector) */
+.guide-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 28px; /* 아이콘 중앙 위치 근처 */
+  top: 40px;  /* 현재 단계 아래부터 */
+  bottom: -8px; /* 다음 단계 위까지 */
+  width: 2px;
+  background: #e2e8f0;
+  z-index: -1;
+}
+
+/* 빈 상태 메시지 */
+.guide-empty {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--text-sub);
+  font-size: 13px;
+}
+
+.route-card { padding:16px; border:1px solid #f1f5f9; border-radius:18px; margin-bottom:14px; cursor:pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+.route-card:hover { transform: scale(1.02); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+.route-card.active { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 1px var(--primary); }
+.guide-text { margin-top:14px; padding:14px; background:#ffffff; border-radius:14px; font-size:13px; line-height:1.7; color:var(--text-main); border: 1px solid #e2e8f0; border-left:4px solid var(--primary); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+.guide-node { font-weight: 700; color: var(--primary); }
+.guide-arrow { color: #94a3b8; margin: 0 4px; font-weight: bold; }
+#status { font-size:13px; margin-top:16px; color:var(--text-sub); text-align: center; font-weight: 500; }
 </style>
 </head>
 <body>
 
-<!-- 1. Landing Overlay (초기 화면) -->
+<!-- 1. Landing Overlay (index.html 테마 계승 및 애니메이션 적용) -->
 <div id="landing-overlay">
   <div class="landing-content">
     <h1>Campus Navigator</h1>
@@ -216,7 +346,6 @@ button:disabled { opacity:0.4; cursor:not-allowed; }
 <script type="module" src="../../js/campus/map_outdoor.js"></script>
 
 <script>
-  // 초기 화면 제어 함수
   function startApp() {
     const overlay = document.getElementById('landing-overlay');
     overlay.classList.add('hidden');
