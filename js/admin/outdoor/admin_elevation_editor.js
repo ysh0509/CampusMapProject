@@ -45,6 +45,7 @@ function clear() {
   markers = [];
 }
 
+
 // =========================
 // RENDER
 // =========================
@@ -52,7 +53,6 @@ function renderNodes() {
   nodes.forEach((n, idx) => {
 
     const isSelected = selected.includes(n.id);
-
     const isLocked = n.is_locked;
 
     const marker = L.circleMarker([n.lat, n.lng], {
@@ -60,7 +60,6 @@ function renderNodes() {
       color: isLocked ? '#9ca3af' : (isSelected ? '#f59e0b' : '#2563eb'),
       weight: 2
     }).addTo(map);
-
 
     // ✅ 겹침 방지 offset
     const offset = (idx % 5) * 6;
@@ -71,12 +70,13 @@ function renderNodes() {
         html: `<div style="
           font-size:11px;
           background:white;
+          color:black;          /* ✅ 글자 색상을 검정색으로 설정 */
           padding:2px 4px;
           border-radius:4px;
           transform: translate(${offset}px, ${-10 - offset}px);
         ">
           ${n.elevation ?? '-'}
-        </div>`
+        </div>` // ✅ 닫는 태그 오타 수정 (</div -> </div>)
       }),
       interactive: false
     }).addTo(map);
@@ -87,6 +87,7 @@ function renderNodes() {
     markers.push(label);
   });
 }
+
 
 
 // =========================

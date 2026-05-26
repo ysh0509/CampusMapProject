@@ -9,89 +9,51 @@
 <head>
   <meta charset="UTF-8">
   <title>Outdoor Map Admin</title>
-
+  <link rel="stylesheet" href="../admin_theme.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f6f8;
+    body, html { height: 100%; overflow: hidden; }
+    #map { height: 100vh; width: 100vw; }
+    .map-control-panel {
+      position: absolute; top: 80px; left: 20px; z-index: 3000;
+      width: 260px;
     }
-
-    #map {
-      width: 100%;
-      height: 100vh;
-    }
-
-    .panel {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      z-index: 999;
-      background: white;
-      padding: 12px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      font-size: 13px;
-      width: 220px;
-    }
-
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-
-    .close-btn {
-      cursor: pointer;
-      border: none;
-      background: #e5e7eb;
-      border-radius: 6px;
-      padding: 2px 6px;
-    }
-
-    .hint {
-      font-size: 12px;
-      color: #6b7280;
-      margin-top: 6px;
-      line-height: 1.4;
-    }
-
-    .status {
-      margin-top: 8px;
-      font-size: 12px;
-      color: #111827;
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .close-btn { background: none; color: var(--text-secondary); font-size: 1.2rem; }
+    .instruction-list { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 15px; }
+    .instruction-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .status-indicator {
+      margin-top: 15px; padding-top: 10px; border-top: 1px solid var(--border-color);
+      font-size: 0.85rem; font-weight: bold; color: var(--accent-primary);
     }
   </style>
 </head>
-
 <body>
-<div id="admin-header"></div>
-<div class="panel" id="panel">
-  <div class="panel-header">
-    <span>Outdoor Map Admin</span>
-    <button class="close-btn" id="close-panel">X</button>
+  <div id="admin-header"></div>
+
+  <div id="map"></div>
+
+  <div class="map-control-panel card">
+    <div class="panel-header">
+      <h3 style="font-size: 1rem;"><i class="fas fa-map"></i> Map Editor</h3>
+      <button class="close-btn" id="close-panel"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="instruction-list">
+      <div class="instruction-item"><i class="fas fa-mouse-pointer"></i> <span>클릭: 노드 생성</span></div>
+      <div class="instruction-item"><i class="fas fa-mouse-pointer"></i> <span>2개 클릭: 엣지 생성</span></div>
+      <div class="instruction-item"><i class="fas fa-keyboard"></i> <span>Ctrl + 클릭: Waypoint</span></div>
+    </div>
+
+    <div class="instruction-item" style="color: var(--text-dim); font-size: 0.75rem;">
+      * 경사는 엣지 단위로 저장됩니다.
+    </div>
+
+    <div id="status" class="status-indicator">대기중</div>
   </div>
 
-  <div>클릭: 노드 생성</div>
-  <div>노드 2개 클릭: 엣지 생성</div>
-  <div>Ctrl + 클릭: waypoint</div>
-
-  <div class="hint">
-    경사는 엣지 단위 저장<br>
-    길찾기는 추후 페이지에서 처리
-  </div>
-
-  <div class="status" id="status">대기중</div>
-</div>
-
-<div id="map"></div>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script type="module" src="../../../js/admin/outdoor/admin_outdoor_map.js"></script>
-
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script type="module" src="../../../js/admin/outdoor/admin_outdoor_map.js"></script>
 </body>
 </html>

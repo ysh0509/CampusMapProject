@@ -11,235 +11,265 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Indoor Admin | Smart Campus</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
   <!-- Google Fonts: Pretendard 대체용 Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --bg-main: #f8fafc;
-      --sidebar-bg: rgba(255, 255, 255, 0.8);
-      --card-bg: #ffffff;
-      --border-color: #e2e8f0;
-      --text-main: #1e293b;
-      --text-muted: #64748b;
-      --accent: #f59e0b;
-      --danger: #ef4444;
-      --success: #10b981;
-      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    }
+<style>
+  :root {
+    /* admin_theme.css 기반 Dark Enterprise Theme */
+    --bg-main: #0f172a;           /* Deep Navy */
+    --bg-card: rgba(30, 41, 59, 0.7); /* Glassmorphism Card */
+    --bg-input: rgba(15, 23, 42, 0.8);
+    
+    --text-primary: #f8fafc;      /* Off-white */
+    --text-secondary: #94a3b8;    /* Slate */
+    
+    --accent-primary: #3b82f6;    /* Blue */
+    --accent-success: #10b981;    /* Green */
+    --accent-warning: #f59e0b;    /* Amber */
+    --accent-danger: #ef4444;     /* Red */
+    
+    --border-color: rgba(255, 255, 255, 0.1);
+    --glass-blur: blur(12px);
+    
+    --radius-lg: 20px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  }
 
-    * { box-sizing: border-box; font-family: 'Inter', 'Pretendard', system-ui, -apple-system, sans-serif; }
-    body { margin: 0; background: var(--bg-main); color: var(--text-main); overflow: hidden; }
+  * { box-sizing: border-box; font-family: 'Inter', 'Pretendard', system-ui, -apple-system, sans-serif; }
+  body { margin: 0; background: var(--bg-main); color: var(--text-primary); overflow: hidden; }
 
-    #admin-content { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; }
-    #app { display: flex; flex: 1; overflow: hidden; }
+  #admin-content { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; }
+  #app { display: flex; flex: 1; overflow: hidden; }
 
-    /* Sidebar Styling */
-    #sidebar {
-      width: 380px;
-      background: var(--sidebar-bg);
-      backdrop-filter: blur(12px);
-      border-right: 1px solid var(--border-color);
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      overflow-y: auto;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.02);
-    }
+  /* Sidebar Styling - Glassmorphism 적용 */
+  #sidebar {
+    width: 380px;
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border-right: 1px solid var(--border-color);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+  }
 
-    h1 { margin: 0; font-size: 22px; font-weight: 700; color: var(--primary); letter-spacing: -0.5px; }
-    h3 { margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  h1 { margin: 0; font-size: 22px; font-weight: 700; color: var(--accent-primary); letter-spacing: -0.5px; }
+  h3 { margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* Tab Navigation */
-    .tabs { 
-      display: flex; 
-      background: #e2e8f0; 
-      padding: 4px; 
-      border-radius: 12px; 
-      gap: 4px; 
-    }
-    .tab {
-      flex: 1;
-      padding: 8px 4px;
-      text-align: center;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-muted);
-      transition: all 0.2s ease;
-    }
-    .tab.active { 
-      background: var(--card-bg); 
-      color: var(--primary); 
-      box-shadow: var(--shadow);
-    }
+  /* Tab Navigation */
+  .tabs { 
+    display: flex; 
+    background: var(--bg-input); 
+    padding: 4px; 
+    border-radius: 12px; 
+    gap: 4px; 
+  }
+  .tab {
+    flex: 1;
+    padding: 8px 4px;
+    text-align: center;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+  }
+  .tab.active { 
+    background: var(--accent-primary); 
+    color: white; 
+    box-shadow: var(--shadow);
+  }
 
-    /* Section & Card Styling */
-    .section {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: var(--shadow);
-    }
+  /* Section & Card Styling */
+  .section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    backdrop-filter: var(--glass-blur);
+  }
 
-    .row { display: flex; gap: 10px; margin-bottom: 12px; }
-    .row > div { flex: 1; }
+  .row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .row > div { flex: 1; }
 
-    /* Input & Select Styling */
-    input, select {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      font-size: 14px;
-      background: #fff;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      outline: none;
-    }
-    input:focus, select:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-    input::placeholder { color: #cbd5e1; }
+  /* Input & Select Styling - Dark Theme */
+  input, select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  input:focus, select:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+  input::placeholder { color: #475569; }
 
-    /* Button Styling */
-/* --- 기존의 전역 button 스타일을 삭제하고 아래와 같이 범위를 제한합니다 --- */
+  /* Button Styling - Dark Theme */
+  #sidebar button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
 
-/* 1. 사이드바 내의 공통 버튼 스타일 (범위 제한) */
-#sidebar button {
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
+  /* Primary Action Buttons */
+  #sidebar button#btnAddBuilding, 
+  #sidebar button#btnAddFloor, 
+  #sidebar button#btnLoadFloor, 
+  #sidebar button#btnUploadImage {
+    background: var(--accent-primary);
+    color: white;
+    margin-top: 8px;
+  }
 
-/* 2. 사이드바 내의 메인 액션 버튼 (Primary) */
-#sidebar button#btnAddBuilding, 
-#sidebar button#btnAddFloor, 
-#sidebar button#btnLoadFloor, 
-#sidebar button#btnUploadImage {
-  background: var(--primary);
-  color: white;
-  margin-top: 8px;
-}
+  #sidebar button#btnAddBuilding:hover, 
+  #sidebar button#btnAddFloor:hover, 
+  #sidebar button#btnLoadFloor:hover, 
+  #sidebar button#btnUploadImage:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+  }
 
-#sidebar button#btnAddBuilding:hover, 
-#sidebar button#btnAddFloor:hover, 
-#sidebar button#btnLoadFloor:hover, 
-#sidebar button#btnUploadImage:hover {
-  background: var(--primary-hover);
-}
+  /* Secondary Action Buttons */
+  #sidebar button.secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+  }
 
-/* 3. 사이드바 내의 보조 버튼 (Secondary) */
-#sidebar button.secondary {
-  background: #f1f5f9;
-  color: var(--text-main);
-}
+  #sidebar button.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
 
-#sidebar button.secondary:hover {
-  background: #e2e8f0;
-}
+  /* Delete Button */
+  #sidebar button#btn_delete, 
+  #sidebar button.btn-delete { 
+    background: rgba(239, 68, 68, 0.15); 
+    color: var(--accent-danger); 
+    border: 1px solid var(--accent-danger);
+  }
+  #sidebar button#btn_delete:hover,
+  #sidebar button.btn-delete:hover { 
+    background: var(--accent-danger); 
+    color: white; 
+  }
 
-/* 4. 버튼 클릭 시 피드백 (전역 효과는 유지하되 대상은 sidebar 내부로) */
-#sidebar button:active {
-  transform: scale(0.98);
-}
+  /* Success/Outline Buttons */
+  #sidebar button.btn-success-outline { 
+    background: rgba(16, 185, 129, 0.15); 
+    color: var(--accent-success); 
+    border: 1px solid var(--accent-success);
+  }
+  #sidebar button.btn-success-outline:hover { 
+    background: var(--accent-success); 
+    color: white; 
+  }
 
-/* 5. 아이템 리스트 내의 작은 버튼들 (수정/삭제 버튼) */
-.item-actions button {
-  width: auto; /* 리스트 버튼은 전체 너비를 쓰지 않음 */
-  padding: 6px 12px;
-  font-size: 12px;
-}
+  /* List & Item Styling */
+  .list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 8px;
+  }
+  .item {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: var(--text-primary);
+  }
+  .item:last-child { border-bottom: none; }
+  .item-info { font-weight: 500; color: var(--text-primary); }
+  .item-actions { display: flex; gap: 6px; }
+  .item-actions button { 
+    width: auto; 
+    padding: 6px 12px; 
+    font-size: 12px; 
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+  .item-actions button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
 
-/* --- 이제 admin-header 안에 있는 button은 이 스타일의 영향을 받지 않습니다 --- */
+  /* Tools Box */
+  .tools-box {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .tools-box div { display: flex; align-items: center; gap: 6px; }
+  .tools-box span { font-weight: 700; color: var(--accent-primary); }
 
+  /* Map Area */
+  #map { flex: 1; background: #0f172a; }
 
-    /* List & Item Styling */
-    .list {
-      max-height: 300px;
-      overflow-y: auto;
-      margin-top: 8px;
-    }
-    .item {
-      padding: 12px;
-      border-bottom: 1px solid #f1f5f9;
-      font-size: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .item:last-child { border-bottom: none; }
-    .item-info { font-weight: 500; color: var(--text-main); }
-    .item-actions { display: flex; gap: 6px; }
-    .item-actions button { padding: 6px; font-size: 12px; }
+  /* Status Floating Bar */
+  #status-container {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+    pointer-events: none;
+  }
 
-    /* Tooltip / Instruction Box */
-    .tools-box {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-radius: 12px;
-      padding: 12px;
-      font-size: 13px;
-      color: #1e40af;
-      line-height: 1.6;
-    }
-    .tools-box div { display: flex; align-items: center; gap: 6px; }
-    .tools-box span { font-weight: 700; color: var(--primary); }
+  #status {
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(10px);
+    color: #f8fafc;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-width: 120px;
+    text-align: center;
+  }
 
-    /* Map Area */
-    #map { flex: 1; background: #e5e7eb; }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
-    /* Status Floating Bar */
-/* Status Floating Bar - 위치를 위로 올리고 가시성 개선 */
-#status-container {
-  position: absolute;
-  bottom: 60px; /* 기존 24px에서 60px로 올려서 하단 여유 공간 확보 */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2000; /* 지도보다 확실히 위에 오도록 인덱스 상향 */
-  pointer-events: none;
-}
+  @media (max-width: 768px) {
+    #sidebar { width: 100%; position: absolute; height: 50%; z-index: 2000; }
+    #app { flex-direction: column; }
+  }
+</style>
 
-#status {
-  background: rgba(15, 23, 42, 0.95); /* 더 어둡고 불투명하게 하여 대비 강화 */
-  backdrop-filter: blur(10px);
-  color: #f8fafc; /* 글자색을 밝은 슬레이트 색으로 */
-  padding: 10px 24px; /* 상하좌우 패딩을 늘려 버튼처럼 보이게 함 */
-  border-radius: 50px;
-  font-size: 14px; /* 글자 크기 약간 키움 */
-  font-weight: 600;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1); /* 미세한 테두리로 경계 명확화 */
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  min-width: 120px;
-  text-align: center;
-}
-
-    /* Scrollbar Customization */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      #sidebar { width: 100%; position: absolute; height: 50%; z-index: 2000; }
-      #app { flex-direction: column; }
-    }
-  </style>
 </head>
 <body>
   <div id="admin-header"></div>

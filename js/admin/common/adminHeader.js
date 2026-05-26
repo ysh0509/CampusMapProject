@@ -3,80 +3,112 @@ import { supabase } from './adminApi.js';
 export function initAdminHeader(active = '') {
   const style = document.createElement('style');
   style.innerHTML = `
+  :root {
+    --admin-bg: rgba(30, 41, 59, 0.8);
+    --admin-border: rgba(255, 255, 255, 0.1);
+    --admin-accent: #3b82f6;
+    --admin-text: #f8fafc;
+    --admin-text-dim: #94a3b8;
+    --admin-danger: #ef4444;
+  }
+
   #admin-header {
     position: sticky;
     top: 0;
     z-index: 2000;
-    background: #ffffff;
+    background: var(--admin-bg);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--admin-border);
   }
 
   .admin-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 18px;
-    border-bottom: 1px solid #e5e7eb;
-    font-family: Arial, sans-serif;
+    padding: 0 24px;
+    height: 64px;
+    font-family: 'Pretendard', sans-serif;
   }
 
   .admin-left {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 32px;
   }
 
   .logo {
     font-weight: 800;
-    font-size: 14px;
-    color: #111827;
+    font-size: 16px;
+    letter-spacing: -0.5px;
+    color: var(--admin-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
+
+  .logo i { color: var(--admin-accent); }
 
   .nav {
     display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 4px;
   }
 
   .nav button {
-    border: 1px solid #e5e7eb;
-    background: #f9fafb;
-    padding: 6px 10px;
+    border: none;
+    background: transparent;
+    color: var(--admin-text-dim);
+    padding: 8px 12px;
     border-radius: 8px;
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .nav button:hover {
+    color: var(--admin-text);
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .nav button.active {
-    background: #111827;
-    color: white;
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--admin-accent);
+  }
+
+  .logout-group {
+    display: flex;
+    align-items: center;
   }
 
   .logout {
-    background: #ef4444;
-    color: white;
-    border: none;
-    padding: 6px 12px;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--admin-danger);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    padding: 8px 16px;
     border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s;
   }
 
+  .logout:hover {
+    background: var(--admin-danger);
+    color: white;
+  }
+
+  /* 레이아웃 보정 */
   #admin-content {
     position: relative;
     z-index: 1;
   }
 
-  .leaflet-pane,
-  .leaflet-top,
-  .leaflet-control {
-    z-index: 500 !important;
-  }
-
-  .leaflet-tooltip {
-    z-index: 600 !important;
-  }
-
-  #map {
-    height: calc(100vh - 60px);
+  /* 모바일/태블릿 대응 */
+  @media (max-width: 1024px) {
+    .admin-header { height: auto; padding: 12px 20px; flex-direction: column; gap: 16px; }
+    .admin-left { flex-direction: column; gap: 12px; width: 100%; }
+    .nav { justify-content: center; width: 100%; overflow-x: auto; padding-bottom: 4px; }
+    .nav button { white-space: nowrap; }
   }
   `;
   document.head.appendChild(style);
@@ -84,21 +116,25 @@ export function initAdminHeader(active = '') {
   const header = document.createElement('div');
   header.className = 'admin-header';
 
+  // 아이콘을 추가하여 시각적 인지도를 높임
   header.innerHTML = `
     <div class="admin-left">
-      <div class="logo">ADMIN</div>
+      <div class="logo"><i class="fas fa-shield-halved"></i> SUPER ADMIN</div>
       <div class="nav">
-        <button data-page="dashboard">Dashboard</button>
-        <button data-page="vision">Vision Control</button>
-        <button data-page="outdoor">Outdoor</button>
-        <button data-page="indoor">Indoor</button>
-        <button data-page="elevation">Elevation</button>
-        <button data-page="vision2NE">Vision</button>
-        <button data-page="occupancy">Occupancy</button>
-        <button data-page="gate">Transfer</button>
+        <button data-page="dashboard"><i class="fas fa-chart-line"></i> Dashboard</button>
+        <button data-page="vision"><i class="fas fa-video"></i> Vision</button>
+        <button data-page="outdoor"><i class="fas fa-map-marked-alt"></i> Outdoor</button>
+        <button data-page="indoor"><i class="fas fa-building"></i> Indoor</button>
+        <button data-page="elevation"><i class="fas fa-mountain"></i> Elevation</button>
+        <button data-page="occupancy"><i class="fas fa-users"></i> Occupancy</button>
+        <button data-page="gate"><i class="fas fa-exchange-alt"></i> Transfer</button>
       </div>
     </div>
-    <button id="logout-btn" class="logout">Logout</button>
+    <div class="logout-group">
+      <button id="logout-btn" class="logout">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
   `;
 
   const mount = document.getElementById('admin-header');
@@ -113,7 +149,7 @@ export function initAdminHeader(active = '') {
     outdoor: `${base}/outdoor/admin_outdoor_map.html`,
     indoor: `${base}/indoor/admin_indoor.html`,
     elevation: `${base}/outdoor/admin_elevation_editor.html`,
-    vision2NE: `${base}/admin_camera_map.html`,
+    vision2NE: `${base}/admin_camera_map.html`, // 기존 매핑 유지
     occupancy: `${base}/admin_occupancy.html`,
     gate: `${base}/indoor/transfer_edges.html`
   };
@@ -128,8 +164,10 @@ export function initAdminHeader(active = '') {
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
     logoutBtn.onclick = async () => {
-      await supabase.auth.signOut();
-      location.href = '/html/admin/admin_login.html';
+      if(confirm('로그아웃 하시겠습니까?')) {
+        await supabase.auth.signOut();
+        location.href = '/html/admin/admin_login.html';
+      }
     };
   }
 

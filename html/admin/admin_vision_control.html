@@ -10,39 +10,38 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vision Control Admin</title>
-  <!-- Pretendard 폰트 적용 (시인성 향상) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
   <style>
     :root {
-      /* Primary Colors - 선명하고 신뢰감 있는 블루 */
-      --primary: #2563eb;
-      --primary-light: #eff6ff;
-      --primary-hover: #1d4ed8;
+      /* admin_theme.css 기반 Dark Enterprise Theme */
+      --bg-main: #0f172a;           /* Deep Navy */
+      --bg-card: rgba(30, 41, 59, 0.7); /* Glassmorphism Card */
+      --bg-input: rgba(15, 23, 42, 0.8);
       
-      /* Success/Danger - 명확한 상태 구분 */
-      --success: #10b981;
-      --success-light: #ecfdf5;
-      --danger: #ef4444;
-      --danger-light: #fef2f2;
+      --text-primary: #f8fafc;      /* Off-white */
+      --text-secondary: #94a3b8;    /* Slate */
       
-      /* Background & Surface - 입체감을 위한 레이어링 */
-      --bg-body: #f8fafc;
-      --bg-card: #ffffff;
-      --border: #e2e8f0;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
+      --accent-primary: #3b82f6;    /* Blue */
+      --accent-success: #10b981;    /* Green */
+      --accent-warning: #f59e0b;    /* Amber */
+      --accent-danger: #ef4444;     /* Red */
       
-      /* Shadow - 부드러운 입체감 */
-      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --glass-blur: blur(12px);
+      
+      --radius-lg: 20px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     }
 
     * { box-sizing: border-box; }
     body { 
       margin: 0; 
       font-family: 'Pretendard', sans-serif; 
-      background: var(--bg-body); 
-      color: var(--text-main);
+      background: var(--bg-main); 
+      color: var(--text-primary);
       line-height: 1.5;
     }
 
@@ -55,13 +54,14 @@
       margin: 0 auto; 
     }
 
-    /* Panel - 카드 스타일 개선 */
+    /* Panel - Glassmorphism 적용 */
     .panel { 
       background: var(--bg-card); 
-      border-radius: 16px; 
+      backdrop-filter: var(--glass-blur);
+      border-radius: var(--radius-lg); 
       padding: 24px; 
-      box-shadow: var(--shadow-md); 
-      border: 1px solid var(--border);
+      box-shadow: var(--shadow); 
+      border: 1px solid var(--border-color);
     }
     
     h3 { 
@@ -71,7 +71,7 @@
       display: flex; 
       align-items: center; 
       gap: 10px;
-      color: var(--text-main);
+      color: var(--text-primary);
     }
     
     /* Form Section */
@@ -79,7 +79,7 @@
     .section-label { 
       font-size: 0.75rem; 
       font-weight: 700; 
-      color: var(--primary); /* 라벨에 포인트 컬러 적용 */
+      color: var(--accent-primary); 
       text-transform: uppercase; 
       margin-bottom: 10px; 
       display: block;
@@ -89,27 +89,28 @@
     .row { display: flex; gap: 12px; margin-bottom: 16px; }
     .row > * { flex: 1; }
     
-    /* Input Styling - 훨씬 깔끔하고 현대적인 느낌 */
+    /* Input Styling - Dark Theme */
     input, select, textarea {
       width: 100%; 
-      border: 1px solid var(--border); 
-      border-radius: 10px;
+      border: 1px solid var(--border-color); 
+      border-radius: var(--radius-sm);
       padding: 10px 14px; 
       font-size: 14px; 
       outline: none; 
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      background: #fff;
+      transition: all 0.2s;
+      background: var(--bg-input);
+      color: var(--text-primary);
     }
     input:focus, select:focus, textarea:focus { 
-      border-color: var(--primary); 
-      box-shadow: 0 0 0 4px var(--primary-light);
+      border-color: var(--accent-primary); 
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     }
-    textarea { min-height: 180px; font-family: 'Fira Code', monospace; background: #f8fafc; }
+    textarea { min-height: 180px; font-family: 'Fira Code', monospace; }
 
-    /* Buttons - 명확한 색상 대비와 Hover 효과 */
+    /* Buttons - Theme Colors */
     button { 
       border: none; 
-      border-radius: 10px; 
+      border-radius: var(--radius-sm); 
       padding: 10px 16px; 
       cursor: pointer; 
       font-weight: 600; 
@@ -121,99 +122,101 @@
     }
     button:active { transform: scale(0.96); }
     
-    .btn-save { background: var(--primary); color: white; width: 100%; margin-top: 12px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
-    .btn-save:hover { background: var(--primary-hover); }
+    .btn-save { background: var(--accent-primary); color: white; width: 100%; margin-top: 12px; }
+    .btn-save:hover { background: #2563eb; transform: translateY(-1px); }
     
-    .btn-delete { background: var(--danger-light); color: var(--danger); }
-    .btn-delete:hover { background: var(--danger); color: white; }
+    .btn-delete { background: rgba(239, 68, 68, 0.15); color: var(--accent-danger); border: 1px solid var(--accent-danger); }
+    .btn-delete:hover { background: var(--accent-danger); color: white; }
     
-    .btn-validate { background: #f1f5f9; color: #475569; }
-    .btn-validate:hover { background: #e2e8f0; }
+    .btn-validate { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-color); }
+    .btn-validate:hover { background: rgba(255, 255, 255, 0.1); }
     
-    .btn-new { background: #f1f5f9; color: var(--text-main); }
+    .btn-new { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-color); }
     
     .btn-success-outline { 
-      background: var(--success-light); 
-      color: var(--success); 
-      border: 1px solid var(--success);
+      background: rgba(16, 185, 129, 0.15); 
+      color: var(--accent-success); 
+      border: 1px solid var(--accent-success);
     }
-    .btn-success-outline:hover { background: var(--success); color: white; }
+    .btn-success-outline:hover { background: var(--accent-success); color: white; }
 
-    /* USB Group - 세련된 토글 버튼 스타일 */
+    /* USB Group */
     .usb-group { 
       display: flex; 
-      background: #f1f5f9; 
+      background: var(--bg-input); 
       padding: 4px; 
-      border-radius: 10px; 
+      border-radius: var(--radius-sm); 
       gap: 4px; 
     }
     .usb-group button { 
       flex: 1; 
       background: transparent; 
-      color: var(--text-muted); 
+      color: var(--text-secondary); 
       padding: 6px; 
       font-size: 12px;
     }
     .usb-group button.active { 
-      background: white; 
-      color: var(--primary); 
-      box-shadow: var(--shadow-sm); 
+      background: var(--accent-primary); 
+      color: white; 
     }
 
     /* List Container */
     .list-container { 
       max-height: 280px; 
       overflow-y: auto; 
-      border: 1px solid var(--border); 
-      border-radius: 12px; 
+      border-radius: var(--radius-md); 
       margin-bottom: 20px; 
+      background: rgba(0, 0, 0, 0.2);
     }
     .list-item { 
       padding: 14px 16px; 
-      border-bottom: 1px solid var(--border); 
+      border-bottom: 1px solid var(--border-color); 
       cursor: pointer; 
       display: flex; 
       align-items: center; 
       gap: 12px; 
       transition: background 0.2s;
+      color: var(--text-primary);
     }
-    .list-item:hover { background: var(--bg-gray); }
+    .list-item:hover { background: rgba(255, 255, 255, 0.05); }
     .list-item.active { 
-      background: var(--primary-light); 
-      border-left: 4px solid var(--primary); 
+      background: rgba(59, 130, 246, 0.15); 
+      border-left: 4px solid var(--accent-primary); 
     }
     .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .dot-on { background: var(--success); box-shadow: 0 0 8px var(--success); }
-    .dot-off { background: #cbd5e1; }
+    .dot-on { background: var(--accent-success); box-shadow: 0 0 8px var(--accent-success); }
+    .dot-off { background: #475569; }
     .item-id { font-weight: 700; font-size: 14px; display: block; }
-    .item-sub { font-size: 12px; color: var(--text-muted); }
+    .item-sub { font-size: 12px; color: var(--text-secondary); }
 
-    /* Video Preview - 몰입감 있는 디자인 */
+    /* Video Preview */
     .video-wrap { 
       background: #000; 
-      border-radius: 16px; 
+      border-radius: var(--radius-md); 
       overflow: hidden; 
       position: relative; 
       aspect-ratio: 16/9; 
-      box-shadow: var(--shadow-md);
+      box-shadow: var(--shadow);
     }
     .video-img { width: 100%; height: 100%; object-fit: contain; }
     .video-overlay { 
       position: absolute; top: 14px; left: 14px; 
-      background: rgba(15, 23, 42, 0.7); 
+      background: rgba(15, 23, 42, 0.85); 
       color: white; padding: 5px 12px; 
       border-radius: 20px; font-size: 12px; 
       backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.1);
     }
 
     /* Message Box */
     #roi_msg { font-size: 13px; margin-top: 8px; font-weight: 500; }
-    .ok { color: var(--success); }
-    .err { color: var(--danger); }
+    .ok { color: var(--accent-success); }
+    .err { color: var(--accent-danger); }
 
     @media (max-width: 1000px) { .container { grid-template-columns: 1fr; } }
   </style>
 </head>
+
 <body>
   <div id="admin-header"></div>
 

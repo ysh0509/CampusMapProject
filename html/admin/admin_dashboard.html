@@ -9,200 +9,197 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <title>관리자 대시보드 | 스마트 캠퍼스</title>
-  <link rel="stylesheet" href="/admin.css" />
-  <style>
-    /* 
-       [Design System] 
-       현대적인 UI를 위해 CSS 변수를 사용합니다. 
-    */
-    :root {
-      --bg-main: #f8fafc;           /* 전체 배경색 (매우 밝은 회색) */
-      --card-bg: #ffffff;           /* 카드 배경색 (흰색) */
-      --text-primary: #1e293b;      /* 주 텍스트 색상 (어두운 남색) */
-      --text-secondary: #64748b;    /* 부 텍스트 색상 (회색) */
-      --accent-blue: #2563eb;       /* 포인트 컬러 (파란색) */
-      --accent-dark: #0f172a;       /* 강조 컬러 (진한 남색) */
-      --status-low: #22c55e;        /* LOW 상태 (초록색) */
-      --status-mid: #f59e0b;        /* MID 상태 (노란색) */
-      --status-high: #ef4444;       /* HIGH 상태 (빨간색) */
-      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* 부드러운 그림자 */
-    }
-
-    body { 
-      margin: 0; 
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; 
-      background: var(--bg-main); 
-      color: var(--text-primary); 
-    }
-
-    .container { 
-      padding: 32px; 
-      max-width: 1600px; 
-      margin: 0 auto; 
-    }
-
-    h2 { 
-      font-size: 1.75rem; 
-      font-weight: 700; 
-      margin-bottom: 24px; 
-      display: flex; 
-      align-items: center; 
-      gap: 10px; 
-    }
-
-    /* 
-       [Grid System - 통계 카드] 
-       - 카드 너비 최적화: minmax를 150px로 낮추어 6개의 카드가 한 줄에 배치되도록 유도
-       - 하단 여백(margin-bottom)을 40px로 설정하여 빠른 이동 메뉴와의 간격 확보
-    */
-    .grid { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
-      gap: 16px; 
-      margin-bottom: 40px; 
-    }
-
-    .card { 
-      background: var(--card-bg); 
-      border-radius: 16px; 
-      padding: 20px; 
-      box-shadow: var(--shadow); 
-      border: 1px solid #e2e8f0;
-      transition: transform 0.2s ease;
-    }
-    .card:hover { transform: translateY(-4px); }
-    .card h3 { font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 8px 0; font-weight: 500; }
-    .card .value { font-size: 1.75rem; font-weight: 800; color: var(--accent-dark); }
-
-    /* 
-       [Quick Actions - 빠른 이동 메뉴] 
-       - 메뉴 영역을 별도의 섹션처럼 보이게 하여 시각적 분리
-       - 상단/하단 여백을 충분히 주어 통계 카드 및 관제 섹션과 붙지 않게 함
-    */
-    .section-actions {
-      margin-bottom: 40px;
-      padding: 16px 24px;
-      background: #f1f5f9; /* 연한 배경색으로 영역 구분 */
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
-    }
-
-    .actions { 
-      display: flex; 
-      gap: 12px; 
-      flex-wrap: wrap; /* 화면이 좁아지면 버튼도 줄바꿈 */
-    }
-
-    .actions button {
-      padding: 10px 20px; 
-      border-radius: 10px; 
-      border: 1px solid #e2e8f0; 
-      background: var(--card-bg); 
-      color: var(--text-primary);
-      font-weight: 600; 
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .actions button:hover { 
-      background: var(--accent-blue); 
-      color: white; 
-      border-color: var(--accent-blue); 
-      transform: translateY(-2px);
-    }
-
-    /* 
-       [Realtime Monitoring - 실시간 관제 섹션] 
-    */
-    .realtime-wrap { 
-      display: grid; 
-      grid-template-columns: 1.2fr 0.8fr; 
-      gap: 24px; 
-    }
-    .panel { 
-      background: var(--card-bg); 
-      border-radius: 16px; 
-      padding: 24px; 
-      box-shadow: var(--shadow); 
-      border: 1px solid #e2e8f0; 
-    }
-    .panel h4 { margin: 0 0 16px 0; font-size: 1.1rem; color: var(--text-primary); }
-
-    /* 비디오 스테이지 디자인 */
-    .video-stage { 
-      position: relative; 
-      width: 100%; 
-      border-radius: 12px; 
-      overflow: hidden; 
-      background: #000; 
-      aspect-ratio: 16/9; 
-    }
-    #live-stream-view { width: 100%; height: 100%; object-fit: contain; }
-    #overlay-layer { position: absolute; inset: 0; pointer-events: none; }
-
-    /* 영상 위 오버레이 칩 (노드 정보) */
-    .overlay-chip {
-      position: absolute; 
-      min-width: 140px; 
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(4px); 
-      color: white; 
-      border: 1px solid rgba(255,255,255,0.15);
-      border-radius: 12px; 
-      padding: 10px; 
-      font-size: 12px; 
-      pointer-events: auto; 
-      cursor: move;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-    }
-    .overlay-chip.stale { opacity: 0.5; filter: grayscale(0.5); } /* 데이터가 오래되면 흐리게 */
+<style>
+  /* [Design System] admin_theme.css 기반 이식 */
+  :root {
+    --bg-main: #0f172a;           /* Deep Navy */
+    --bg-card: rgba(30, 41, 59, 0.7); /* Glassmorphism Card */
+    --bg-input: rgba(15, 23, 42, 0.8);
     
-    .chip-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; margin-top: 4px; }
-    .chip-low { background: #dcfce7; color: #166534; }
-    .chip-mid { background: #fef3c7; color: #92400e; }
-    .chip-high { background: #fee2e2; color: #991b1b; }
-
-    /* 스트림 컨트롤 바 */
-    .stream-controls { display: flex; gap: 8px; margin-bottom: 16px; }
-    .stream-controls input { flex: 1; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; }
-    .stream-controls button { padding: 10px 18px; border: none; border-radius: 8px; background: var(--accent-dark); color: white; cursor: pointer; }
-
-    /* 
-       [Bottom Analytics - 하단 분석 섹션] 
-    */
-    .section-row3 { 
-      display: grid; 
-      grid-template-columns: repeat(3, 1fr); 
-      gap: 24px; 
-      margin-top: 32px; 
-    }
-    .panel-box { 
-      background: var(--card-bg); 
-      border-radius: 16px; 
-      padding: 20px; 
-      box-shadow: var(--shadow); 
-      border: 1px solid #e2e8f0; 
-    }
-    .panel-box h3 { font-size: 1rem; margin-bottom: 16px; color: var(--text-primary); }
-    .list { height: 280px; overflow-y: auto; border-radius: 8px; }
-    .item { padding: 12px; border-bottom: 1px solid #f1f5f9; transition: background 0.2s; }
-    .item:hover { background: #f8fafc; }
+    --text-primary: #f8fafc;      /* Off-white */
+    --text-secondary: #94a3b8;    /* Slate */
     
-    /* 경고/위험 항목 스타일 */
-    .item.danger { color: var(--status-high); border-left: 4px solid var(--status-high); }
-    .item.warn { color: var(--status-mid); border-left: 4px solid var(--status-mid); }
-    .item.ok { color: var(--status-low); border-left: 4px solid var(--status-low); }
+    --accent-primary: #3b82f6;    /* Blue */
+    --accent-success: #10b981;    /* Green */
+    --accent-warning: #f59e0b;    /* Amber */
+    --accent-danger: #ef4444;     /* Red */
+    
+    --border-color: rgba(255, 255, 255, 0.1);
+    --glass-blur: blur(12px);
+    
+    --radius-lg: 20px;
+    --radius-md: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  }
 
-    /* 페이징 버튼 */
-    .pager { margin-top: 16px; display: flex; justify-content: flex-end; align-items: center; gap: 12px; font-size: 14px; }
-    .pager button { padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; cursor: pointer; }
+  body { 
+    margin: 0; 
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; 
+    background: var(--bg-main); 
+    color: var(--text-primary);
+    line-height: 1.5;
+  }
 
-    /* 반응형 레이아웃: 화면이 좁아지면 1열로 변경 */
-    @media (max-width: 1200px) {
-      .realtime-wrap, .section-row3 { grid-template-columns: 1fr; }
-      .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-    }
-  </style>
+  .container { 
+    padding: 32px; 
+    max-width: 1600px; 
+    margin: 0 auto; 
+  }
+
+  h2 { 
+    font-size: 1.75rem; 
+    font-weight: 700; 
+    margin-bottom: 24px; 
+    display: flex; 
+    align-items: center; 
+    gap: 10px;
+    color: var(--text-primary);
+  }
+
+  /* [Grid System] 배치는 유지, 스타일만 변경 */
+  .grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+    gap: 16px; 
+    margin-bottom: 40px; 
+  }
+
+  .card { 
+    background: var(--bg-card); 
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 20px; 
+    box-shadow: var(--shadow);
+    transition: transform 0.2s ease;
+  }
+  .card:hover { transform: translateY(-4px); }
+  .card h3 { font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 8px 0; font-weight: 500; }
+  .card .value { font-size: 1.75rem; font-weight: 800; color: var(--text-primary); }
+
+  /* [Quick Actions] */
+  .section-actions {
+    margin-bottom: 40px;
+    padding: 16px 24px;
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    backdrop-filter: var(--glass-blur);
+  }
+
+  .actions { 
+    display: flex; 
+    gap: 12px; 
+    flex-wrap: wrap; 
+  }
+
+  .actions button {
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .actions button:hover { 
+    background: var(--accent-primary); 
+    color: white; 
+    transform: translateY(-2px);
+  }
+
+  /* [Realtime Monitoring] */
+  .realtime-wrap { 
+    display: grid; 
+    grid-template-columns: 1.2fr 0.8fr; 
+    gap: 24px; 
+  }
+  .panel { 
+    background: var(--bg-card); 
+    backdrop-filter: var(--glass-blur);
+    border-radius: var(--radius-lg);
+    padding: 24px; 
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+  }
+  .panel h4 { margin: 0 0 16px 0; font-size: 1.1rem; color: var(--text-primary); }
+
+  /* Video Stage */
+  .video-stage { 
+    position: relative; 
+    width: 100%; 
+    border-radius: var(--radius-md);
+    overflow: hidden; 
+    background: #000; 
+    aspect-ratio: 16/9; 
+  }
+  #live-stream-view { width: 100%; height: 100%; object-fit: contain; }
+
+  /* Stream Controls */
+  .stream-controls { display: flex; gap: 8px; margin-bottom: 16px; }
+  .stream-controls input { 
+    flex: 1; 
+    padding: 10px 14px; 
+    background: var(--bg-input);
+    border: 1px solid var(--border-color); 
+    border-radius: var(--radius-sm); 
+    color: var(--text-primary);
+    outline: none; 
+  }
+  .stream-controls button { 
+    padding: 10px 18px; 
+    border: none; 
+    border-radius: var(--radius-sm); 
+    background: var(--accent-primary); 
+    color: white; 
+    cursor: pointer; 
+  }
+
+  /* [Bottom Analytics] */
+  .section-row3 { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 24px; 
+    margin-top: 32px; 
+  }
+  .panel-box { 
+    background: var(--bg-card); 
+    backdrop-filter: var(--glass-blur);
+    border-radius: var(--radius-lg);
+    padding: 20px; 
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+  }
+  .panel-box h3 { font-size: 1rem; margin-bottom: 16px; color: var(--text-primary); }
+  
+  .list { height: 280px; overflow-y: auto; border-radius: var(--radius-sm); }
+  .item { 
+    padding: 12px; 
+    border-bottom: 1px solid var(--border-color); 
+    transition: background 0.2s; 
+    color: var(--text-primary);
+  }
+  .item:hover { background: rgba(255, 255, 255, 0.05); }
+  
+  /* Status Colors (Refined for Dark Theme) */
+  .item.danger { color: var(--accent-danger); border-left: 4px solid var(--accent-danger); }
+  .item.warn { color: var(--accent-warning); border-left: 4px solid var(--accent-warning); }
+  .item.ok { color: var(--accent-success); border-left: 4px solid var(--accent-success); }
+
+  /* Pager */
+  .pager { margin-top: 16px; display: flex; justify-content: flex-end; align-items: center; gap: 12px; font-size: 14px; color: var(--text-secondary); }
+  .pager button { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); cursor: pointer; }
+
+  @media (max-width: 1200px) {
+    .realtime-wrap, .section-row3 { grid-template-columns: 1fr; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  }
+</style>
+
 </head>
 <body>
   <div id="admin-header"></div>

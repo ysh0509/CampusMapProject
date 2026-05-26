@@ -1,312 +1,92 @@
-<!-- html/admin/indoor/transfer_edges.html -->
-
 <!DOCTYPE html>
-<html lang="ko">
-
-<head>
-<meta charset="UTF-8">
-
-<title>Transfer Edge Manager</title>
-
 <script>
-window.__ENV = {
-  SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
-
-};
+  window.__ENV = {
+    SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+  };
 </script>
-
-<link
-rel="stylesheet"
-href="https://unpkg.com/leaflet/dist/leaflet.css"
-/>
-
-<style>
-
-/* =========================
-   GLOBAL
-========================= */
-
-html,
-body {
-  margin:0;
-  height:100%;
-  font-family:Arial,sans-serif;
-  background:#f5f7fb;
-}
-
-/* =========================
-   CONTENT
-========================= */
-
-#admin-content {
-
-  display:flex;
-
-  height:calc(100vh - 60px);
-}
-
-/* =========================
-   MAP
-========================= */
-
-#map {
-
-  flex:1;
-
-  height:100%;
-}
-
-/* =========================
-   PANEL
-========================= */
-
-#panel {
-
-  width:420px;
-
-  background:#fff;
-
-  border-left:1px solid #ddd;
-
-  padding:14px;
-
-  overflow:auto;
-
-  box-sizing:border-box;
-}
-
-/* =========================
-   PANEL TITLE
-========================= */
-
-#panel h3 {
-
-  margin:10px 0 6px;
-
-  font-size:14px;
-}
-
-/* =========================
-   PANEL FORM
-========================= */
-
-#panel select,
-#panel input,
-#panel button {
-
-  width:100%;
-
-  padding:8px;
-
-  margin-bottom:10px;
-
-  box-sizing:border-box;
-
-  border:1px solid #ccc;
-
-  border-radius:6px;
-
-  font-size:14px;
-}
-
-/* =========================
-   CREATE BUTTON
-========================= */
-
-#createBtn {
-
-  background:#2563eb;
-
-  color:white;
-
-  border:none;
-
-  cursor:pointer;
-}
-
-#createBtn:hover {
-
-  background:#1e4ed8;
-}
-
-/* =========================
-   STATUS
-========================= */
-
-.statusBox {
-
-  padding:8px;
-
-  border-radius:6px;
-
-  background:#eef3ff;
-
-  margin-bottom:10px;
-
-  font-size:13px;
-}
-
-/* =========================
-   FLOOR WRAPPER
-========================= */
-
-#floorWrapper {
-
-  position:relative;
-
-  width:100%;
-
-  min-height:300px;
-
-  border:1px solid #ccc;
-
-  overflow:auto;
-
-  background:#fafafa;
-}
-
-/* =========================
-   FLOOR IMAGE
-========================= */
-
-#floorImage {
-
-  display:block;
-
-  max-width:none;
-}
-
-/* =========================
-   INDOOR NODE
-========================= */
-
-.indoorNode {
-
-  position:absolute;
-
-  width:14px;
-  height:14px;
-
-  border-radius:50%;
-
-  background:#2563eb;
-
-  border:2px solid white;
-
-  transform:translate(-50%,-50%);
-
-  cursor:pointer;
-
-  z-index:100;
-}
-
-.indoorNode:hover {
-
-  transform:
-  translate(-50%,-50%)
-  scale(1.15);
-}
-
-.indoorNode.active {
-
-  background:#dc2626;
-}
-
-</style>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Transfer Edge Manager</title>
+  <link rel="stylesheet" href="../admin_theme.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body, html { height: 100%; overflow: hidden; }
+    #admin-content { display: flex; height: calc(100vh - 64px); }
+    #map { flex: 1; }
+    #panel {
+      width: 400px;
+      overflow-y: auto;
+      border-left: 1px solid var(--border-color);
+    }
+    .status-box {
+      background: var(--bg-input);
+      padding: 12px;
+      border-radius: var(--radius-md);
+      margin-bottom: 15px;
+      font-size: 0.85rem;
+      border: 1px solid var(--border-color);
+    }
+    #floorWrapper {
+      position: relative;
+      width: 100%;
+      min-height: 300px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      overflow: auto;
+      background: #111;
+      margin-top: 10px;
+    }
+    #floorImage { display: block; max-width: none; }
+    .indoorNode {
+      position: absolute; width: 14px; height: 14px; border-radius: 50%;
+      background: var(--accent-primary); border: 2px solid white;
+      transform: translate(-50%, -50%); cursor: pointer; z-index: 100;
+    }
+    .indoorNode.active { background: var(--accent-danger); }
+    .section-title { font-size: 0.9rem; color: var(--accent-primary); text-transform: uppercase; margin-bottom: 10px; display: block; }
+  </style>
 </head>
-
 <body>
+  <div id="admin-header"></div>
+  <div id="admin-content">
+    <div id="map"></div>
+    <div id="panel" class="card">
+      <h2 style="font-size: 1.2rem;"><i class="fas fa-exchange-alt"></i> Transfer Manager</h2>
+      
+      <span class="section-title">Selected Outdoor Node</span>
+      <div id="outdoorSelected" class="status-box">없음</div>
 
-<!-- HEADER -->
-<div id="admin-header"></div>
+      <span class="section-title">Selected Indoor Node</span>
+      <div id="indoorSelected" class="status-box">없음</div>
 
-<!-- CONTENT -->
-<div id="admin-content">
+      <div class="field">
+        <label class="label">건물 선택</label>
+        <select id="buildingSelect"></select>
+      </div>
 
-  <!-- MAP -->
-  <div id="map"></div>
+      <div class="field">
+        <label class="label">층 선택</label>
+        <select id="floorSelect"></select>
+      </div>
 
-  <!-- PANEL -->
-  <div id="panel">
+      <div class="field">
+        <label class="label">강의실 검색</label>
+        <input type="text" id="roomSearch" placeholder="강의실 번호 검색" />
+      </div>
 
-    <!-- OUTDOOR -->
-    <h3>선택된 외부 노드</h3>
+      <span class="section-title">Floor Plan</span>
+      <div id="floorWrapper">
+        <img id="floorImage"/>
+      </div>
 
-    <div
-    id="outdoorSelected"
-    class="statusBox">
-      없음
+      <button id="createBtn" class="btn-primary" style="width: 100%; margin-top: 20px;">연결 생성</button>
     </div>
-
-    <!-- INDOOR -->
-    <h3>선택된 실내 노드</h3>
-
-    <div
-    id="indoorSelected"
-    class="statusBox">
-      없음
-    </div>
-
-    <!-- BUILDING -->
-    <h3>건물</h3>
-
-    <select id="buildingSelect">
-
-      <option value="">
-        선택
-      </option>
-
-    </select>
-
-    <!-- FLOOR -->
-    <h3>층</h3>
-
-    <select id="floorSelect">
-
-      <option value="">
-        선택
-      </option>
-
-    </select>
-
-    <!-- SEARCH -->
-    <h3>강의실 검색</h3>
-
-    <input
-    type="text"
-    id="roomSearch"
-    placeholder="강의실 번호 검색"
-    />
-
-    <!-- FLOOR IMAGE -->
-    <h3>평면도</h3>
-
-    <div id="floorWrapper">
-
-      <img id="floorImage"/>
-
-    </div>
-
-    <!-- CREATE -->
-    <button id="createBtn">
-
-      연결 생성
-
-    </button>
-
   </div>
 
-</div>
-
-<script
-src="https://unpkg.com/leaflet/dist/leaflet.js">
-</script>
-
-<script
-type="module"
-src="/js/admin/indoor/transfer_edges.js">
-</script>
-
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script type="module" src="/js/admin/indoor/transfer_edges.js"></script>
 </body>
 </html>
