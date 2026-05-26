@@ -1,17 +1,14 @@
-<!-- index.html 수정본 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Campus | AI 공간 분석 시스템</title>
+    <title>Smart Campus | AI 기반 공간 지능 플랫폼</title>
     <link rel="stylesheet" href="index.css">
-    <!-- FontAwesome (화살표 아이콘용) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 </head>
 <body>
-    <!-- 관리자 진입 버튼 -->
     <a href="html/admin/admin_dashboard.html" class="admin-fab">
         <i class="fas fa-user-shield"></i> Admin
     </a>
@@ -25,58 +22,59 @@
         <!-- Hero Section -->
         <section class="hero container">
             <h1 id="hero-title">Smart Campus</h1>
-            <p id="hero-desc">AI 기반 실시간 공간 혼잡도 분석 및<br>지능형 통합 관제 플랫폼</p>
-            
-            <!-- 시스템 바로가기 버튼 (기존 유지) -->
-            <a href="html/campus/map_outdoor.html" class="cta-button">시스템 접속하기</a>
-
-            <!-- 스크롤 유도 화살표 (신설) -->
+            <p id="hero-desc">단순한 지도를 넘어, 공간의 상태를 읽고<br>최적의 흐름을 설계하는 AI 공간 지능 솔루션</p>
+            <a href="html/campus/map_outdoor.html" class="cta-button">서비스 시작하기</a>
             <a href="#features-section" class="scroll-indicator">
-                <span>SCROLL DOWN</span>
+                <span>Explore Technology</span>
                 <i class="fas fa-chevron-down"></i>
             </a>
         </section>
 
-        <!-- Quick Navigation Section -->
-        <section class="nav-section container" style="padding-bottom: 5rem;">
-            <div class="feature-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
-                <a href="html/campus/map_outdoor.html" class="feature-card" style="text-decoration: none; display: block;">
-                    <span class="feature-icon">🌍</span>
-                    <h3 style="margin-bottom: 10px;">Outdoor Map</h3>
-                    <p style="font-size: 0.9rem;">캠퍼스 전체 실외 경로 및<br>혼잡도 실시간 확인</p>
-                </a>
-                <a href="html/campus/map_indoor.html" class="feature-card" style="text-decoration: none; display: block;">
-                    <span class="feature-icon">🏢</span>
-                    <h3 style="margin-bottom: 10px;">Indoor Map</h3>
-                    <p style="font-size: 0.9rem;">건물 내부 층별 상세 경로 및<br>실내 내비게이션</p>
-                </a>
+        <!-- Problem & Solution Section -->
+        <section class="problem-solution container">
+            <div class="ps-grid">
+                <div class            class="ps-card problem">
+                    <h2>The Challenge</h2>
+                    <ul>
+                        <li><i class="fas fa-times-circle"></i> 실시간 혼잡도를 알 수 없는 불투명한 공간 관리</li>
+                        <li><i class="fas fa-times-circle"></i> 건물 내 복잡한 구조로 인한 길찾기의 어려움</li>
+                        <li><i class="fas fa-times-circle"></i> 데이터와 현장 피드백 간의 단절</li>
+                    </ul>
+                </div>
+                <div class="ps-card solution">
+                    <h2>Our Solution</h2>
+                    <ul>
+                        <li><i class="fas fa-check-circle"></i> <b>Computer Vision:</b> 실시간 인원 및 점유율 분석</li>
+                        <li><i class="fas fa-check-circle"></i> <b>Unified Graph:</b> 실내외 끊김 없는 통합 내비게이션</li>
+                        <li><i class="fas fa-check-circle"></i> <b>Edge-to-Cloud:</b> 실시간 데이터 동기화 및 현장 제어</li>
+                    </ul>
+                </div>
             </div>
         </section>
 
-        <!-- Features Section (ID 추가하여 스크롤 타겟으로 지정) -->
+        <!-- Deep Tech Section -->
         <section class="features container" id="features-section">
             <h2 class="section-title">Core Technology</h2>
-            <!-- ... 기존 feature-grid 내용 동일 ... -->
             <div class="feature-grid">
                 <div class="feature-card">
                     <span class="feature-icon">👁️</span>
-                    <h3>Real-time Vision AI</h3>
-                    <p>YOLOv8 기반의 정밀한 객체 검출을 통해 실시간 인원 수와 공간 점유율을 정확히 분석합니다.</p>
+                    <h3>Vision Intelligence</h3>
+                    <p>YOLOv8 모델을 활용하여 카메라 ROI(관심 영역) 내의 객체를 실시간 검출하고, 공간 점유율을 정밀하게 수치화합니다.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">📍</span>
-                    <h3>Smart Navigation</h3>
-                    <p>혼잡도를 반영한 최적 경로 탐색 및 실내외 통합 내비게이션 서비스를 제공합니다.</p>
+                    <span class="feature-icon">🧠</span>
+                    <h3>Advanced Pathfinding</h3>
+                    <p>A* 알고리즘을 기반으로 거리, 경사도, 계단 유무, 실시간 혼잡도를 가중치로 계산하여 최적의 경로를 산출합니다.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">📊</span>
-                    <h3>Integrated Control</h3>
-                    <p>Supabase 기반 실시간 데이터 동기화로 관리자에게 통합된 관제 대시보드를 지원합니다.</p>
+                    <span class="feature-icon">🌐</span>
+                    <h3>Unified Spatial Graph</h3>
+                    <p>실외 GPS 좌표와 실내 픽셀 좌표를 하나의 통합 그래프로 연결하여 실내외를 아우르는 Seamless한 이동 경험을 제공합니다.</p>
                 </div>
                 <div class="feature-card">
-                    <span class="feature-icon">🤖</span>
-                    <h3>Edge Intelligence</h3>
-                    <p>ESP32-S3 임베디드 시스템과 연동하여 현장에서 즉각적인 피드백을 수행합니다.</p>
+                    <span class="feature-icon">📡</span>
+                    <h3>Real-time Sync</h3>
+                    <p>Supabase Realtime 엔진을 통해 분석된 공간 데이터가 관리자 대시보드와 현장 임베디드 디바이스에 즉시 반영됩니다.</p>
                 </div>
             </div>
         </section>
@@ -84,7 +82,7 @@
 
     <footer>
         <div class="container">
-            <p>&copy; 2026 Campus Project. Developed by SeongHyun Yoon</p>
+            <p>&copy; 2026 Smart Campus Project. Developed by Mindlogic Team.</p>
         </div>
     </footer>
 

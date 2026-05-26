@@ -229,3 +229,62 @@ footer {
     font-size: 0.8rem;
   }
 }
+
+
+/* index.css 에 추가 */
+
+/* Problem & Solution Section Style */
+.problem-solution {
+    padding: 6rem 0;
+}
+
+.ps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 3rem;
+}
+
+.ps-card {
+    padding: 3rem;
+    border-radius: 30px;
+    transition: transform 0.3s ease;
+}
+
+.ps-card h2 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+}
+
+.ps-card ul {
+    list-style: none;
+}
+
+.ps-card ul li {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.problem {
+    background: rgba(239, 68, 68, 0.05); /* Red tint */
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.problem i { color: #ef4444; }
+
+.solution {
+    background: rgba(16, 185, 129, 0.05); /* Green tint */
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.solution i { color: #10b981; }
+
+.solution b { color: #fff; }
+
+/* Responsive adjustment */
+@media (max-width: 768px) {
+    .ps-grid { grid-template-columns: 1fr; }
+    .ps-card { padding: 2rem; }
+}
