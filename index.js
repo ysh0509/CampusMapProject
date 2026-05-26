@@ -64,3 +64,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// 4. Smooth Scrolling for Scroll Indicator
+document.querySelector('.scroll-indicator').addEventListener('click', function(e) {
+    e.preventDefault();
+    const targetId = this.getAttribute('href');
+    const targetElement = document.querySelector(targetId);
+    
+    if (targetElement) {
+        targetElement.scrollIntoView({
+            behavior: 'smooth'
+        });
+    }
+});

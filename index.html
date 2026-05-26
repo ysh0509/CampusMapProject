@@ -1,3 +1,4 @@
+<!-- index.html 수정본 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -5,11 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Campus | AI 공간 분석 시스템</title>
     <link rel="stylesheet" href="index.css">
-    <!-- Pretendard Font -->
+    <!-- FontAwesome (화살표 아이콘용) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 </head>
 <body>
-    <!-- Animated Background -->
+    <!-- 관리자 진입 버튼 -->
+    <a href="html/admin/admin_dashboard.html" class="admin-fab">
+        <i class="fas fa-user-shield"></i> Admin
+    </a>
+
     <div class="bg-glow">
         <div class="glow-circle" style="background: var(--primary); top: -10%; left: -10%;"></div>
         <div class="glow-circle" style="background: var(--accent); bottom: -10%; right: -10%; animation-delay: -5s;"></div>
@@ -20,12 +26,37 @@
         <section class="hero container">
             <h1 id="hero-title">Smart Campus</h1>
             <p id="hero-desc">AI 기반 실시간 공간 혼잡도 분석 및<br>지능형 통합 관제 플랫폼</p>
-            <a href="map_outdoor.html" class="cta-button">시스템 접속하기</a>
+            
+            <!-- 시스템 바로가기 버튼 (기존 유지) -->
+            <a href="html/campus/map_outdoor.html" class="cta-button">시스템 접속하기</a>
+
+            <!-- 스크롤 유도 화살표 (신설) -->
+            <a href="#features-section" class="scroll-indicator">
+                <span>SCROLL DOWN</span>
+                <i class="fas fa-chevron-down"></i>
+            </a>
         </section>
 
-        <!-- Features Section -->
-        <section class="features container">
+        <!-- Quick Navigation Section -->
+        <section class="nav-section container" style="padding-bottom: 5rem;">
+            <div class="feature-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <a href="html/campus/map_outdoor.html" class="feature-card" style="text-decoration: none; display: block;">
+                    <span class="feature-icon">🌍</span>
+                    <h3 style="margin-bottom: 10px;">Outdoor Map</h3>
+                    <p style="font-size: 0.9rem;">캠퍼스 전체 실외 경로 및<br>혼잡도 실시간 확인</p>
+                </a>
+                <a href="html/campus/map_indoor.html" class="feature-card" style="text-decoration: none; display: block;">
+                    <span class="feature-icon">🏢</span>
+                    <h3 style="margin-bottom: 10px;">Indoor Map</h3>
+                    <p style="font-size: 0.9rem;">건물 내부 층별 상세 경로 및<br>실내 내비게이션</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Features Section (ID 추가하여 스크롤 타겟으로 지정) -->
+        <section class="features container" id="features-section">
             <h2 class="section-title">Core Technology</h2>
+            <!-- ... 기존 feature-grid 내용 동일 ... -->
             <div class="feature-grid">
                 <div class="feature-card">
                     <span class="feature-icon">👁️</span>
@@ -53,7 +84,7 @@
 
     <footer>
         <div class="container">
-            <p>&copy; 2026 Smart Campus Project. Developed by Mindlogic Team.</p>
+            <p>&copy; 2026 Campus Project. Developed by SeongHyun Yoon</p>
         </div>
     </footer>
 
