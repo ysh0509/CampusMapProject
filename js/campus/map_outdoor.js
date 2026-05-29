@@ -109,7 +109,7 @@ function bindUI() {
  * [최종 완성본] 거점 중심의 경로 가이드 생성 함수
  * 1. 첫 번째 노드는 무조건 '출발지'로 표시
  * 2. 마지막 노드는 무조건 '도착지'로 표시
- * 3. 중간 노드들은 '연결된 엣지가 6개 이상인 거점'이면서 '이름이 있는 경우'에만 표시
+ * 3. 중간 노드들은 '연결된 엣지가 8개 이상인 거점'이면서 '이름이 있는 경우'에만 표시
  */
 function generateGuideText(path, nodeMap, nodeDegreeMap) {
   if (!path || path.length === 0) return '경로 정보가 없습니다.';
@@ -136,9 +136,9 @@ function generateGuideText(path, nodeMap, nodeDegreeMap) {
     if (isStart) return '출발지';
     if (isEnd) return '도착지';
 
-    // 중간 노드들은 거점(Degree >= 6)이면서 이름이 있는 경우만 반환
+    // 중간 노드들은 거점(Degree >= 8)이면서 이름이 있는 경우만 반환
     const degree = (nodeDegreeMap && nodeDegreeMap.get(strId)) || 0;
-    const isHub = degree >= 6;
+    const isHub = degree >= 8;
     const name = node.name ? node.name.trim() : null;
 
     if (isHub && name) {

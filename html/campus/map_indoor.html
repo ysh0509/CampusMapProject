@@ -1,238 +1,156 @@
 <!DOCTYPE html>
+<script>
+   window.__ENV = {
+     SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+   };
+ </script>
 <html lang="ko">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart Campus | Indoor Navigation</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Campus | Indoor Navigation</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --accent-blue: #3b82f6;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg-dark); color: var(--text-primary); overflow: hidden; font-family: 'Pretendard', sans-serif; }
 
-<style>
-/* =========================================================
-   DESIGN SYSTEM & RESET
-========================================================= */
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        /* =========================================================
+           [수정] Hero Section: map_outdoor와 동일한 디자인 적용
+        ========================================================= */
+        #hero-section {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100; 
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), visibility 1s;
+        }
+        #hero-section.fade-out { opacity: 0; visibility: hidden; }
 
-:root {
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --bg-gradient: radial-gradient(circle at center, #f8fafc 0%, #e2e8f0 100%);
-  --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.5);
-  --text-main: #1e293b;
-  --text-sub: #64748b;
-  --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-  --radius-lg: 24px;
-  --radius-md: 14px;
-}
+        /* 타이틀: 그라데이션 및 애니메이션 추가 */
+        .hero-content { text-align: center; animation: fadeInUp 1.2s ease-out; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-* { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
-html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Pretendard', sans-serif; background: #f1f5f9; color: var(--text-main); }
-.hidden { display: none !important; }
+        .hero-title { 
+            font-size: 4.5rem; font-weight: 800; margin-bottom: 1rem; 
+            background: linear-gradient(to bottom, #ffffff 30%, #94a3b8 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            letter-spacing: -0.05em;
+        }
+        .hero-subtitle { font-size: 1.4rem; color: var(--text-secondary); margin-bottom: 3.5rem; }
 
-#map { width: 100vw; height: 100vh; background: #cbd5e1; }
+        /* 버튼: map_outdoor 스타일 적용 */
+        .button-group { display: flex; gap: 2rem; }
+        .btn { 
+            padding: 1.2rem 3.5rem; border-radius: 12px; font-size: 1.1rem; font-weight: 600; 
+            cursor: pointer; border: none; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .btn-primary { background: var(--accent-blue); color: white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.05); color: white; border: 1px solid var(--glass-border); }
+        .btn:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
-/* =========================================================
-   GUIDE SCREEN
-========================================================= */
-#guidePanel {
-  position: fixed; inset: 0; z-index: 10000;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg-gradient);
-}
-.guideCard {
-  width: 400px; padding: 40px; border-radius: 32px;
-  background: var(--glass-bg); backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border); box-shadow: var(--shadow);
-  text-align: center; animation: cardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@keyframes cardPop { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-.guideTitle { font-size: 30px; font-weight: 800; margin-bottom: 12px; background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-.guideDesc { font-size: 15px; color: var(--text-sub); margin-bottom: 32px; }
-
-/* =========================================================
-   BUTTON SYSTEM (핵심 수정 부분)
-========================================================= */
-
-/* 모든 버튼의 공통 기본 스타일 (btn-main) */
-.btn-main {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 50px;
-  font-size: 15px;
-  font-weight: 700;
-  border-radius: 14px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  margin-top: 12px;
-  gap: 8px;
-}
-
-.btn-main:active { transform: scale(0.98); }
-
-/* 메인 액션 버튼 (진입하기 등) */
-.btn-primary {
-  background: #0f172a;
-  color: white;
-}
-.btn-primary:hover {
-  background: #1e293b;
-}
-
-/* 보조 액션 버튼 (캠퍼스 지도 바로가기 등) */
-.btn-secondary {
-  background: #ffffff;
-  color: #475569;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-.btn-secondary:hover {
-  background: #f8fafc;
-  color: #1e293b;
-  border-color: #cbd5e1;
-}
-
-/* =========================================================
-   ROUTE PANEL & OTHERS (기존 스타일 유지)
-========================================================= */
-#routePanel {
-  position: fixed; top: 24px; right: 24px; z-index: 7000;
-  width: 380px; max-height: calc(100vh - 48px); overflow-y: auto;
-  padding: 24px; border-radius: 28px;
-  background: var(--glass-bg); backdrop-filter: blur(20px);
-  border: 1px solid var(--glass-border); box-shadow: var(--shadow);
-  animation: panelIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes panelIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-
-.routeHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 16px; }
-.routeTitle { font-size: 20px; font-weight: 800; color: #0f172a; }
-.closeBtn { width: 32px; height: 32px; border: none; border-radius: 8px; background: #f1f5f9; cursor: pointer; font-size: 18px; }
-
-.locationSelector { background: rgba(255, 255, 255, 0.5); padding: 16px; border-radius: 18px; margin-bottom: 24px; border: 1px solid rgba(0, 0, 0, 0.05); }
-.locationSelector-title { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 10px; text-transform: uppercase; }
-
-label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #475569; }
-select {
-  width: 100%; height: 42px; padding: 0 14px; margin-bottom: 12px;
-  border-radius: 10px; border: 1px solid #cbd5e1; background-color: white;
-  font-size: 14px; appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 12px center; background-size: 14px;
-}
-
-.routeSection { margin-bottom: 16px; padding: 16px; border-radius: 16px; background: rgba(248, 250, 252, 0.7); border: 1px solid rgba(226, 232, 240, 0.8); }
-.routeSectionTitle { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--text-sub); }
-
-.primaryBtn { /* 기존 primaryBtn과 btn-main의 역할을 통합하거나 구분하여 사용 */
-  width: 100%; height: 50px; background: #0f172a; color: white;
-  font-size: 15px; font-weight: 700; border-radius: 14px; border: none; cursor: pointer;
-  transition: all 0.2s;
-}
-.primaryBtn:hover { background: #1e293b; transform: translateY(-1px); }
-
-.modeWrap { display: flex; gap: 8px; margin-bottom: 20px; }
-.modeBtn { flex: 1; height: 40px; background: #f1f5f9; border-radius: 10px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-.modeBtn.active { background: var(--primary); color: white; }
-
-#floorOverlay {
-  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  z-index: 12000; padding: 24px 50px; border-radius: 30px;
-  background: rgba(15, 23, 42, 0.85); color: white; font-size: 32px; font-weight: 800;
-  backdrop-filter: blur(15px); pointer-events: none; animation: overlayPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@keyframes overlayPop { from { opacity: 0; transform: translate(-50%, -40%) scale(0.8); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-
-@media (max-width: 900px) {
-  #routePanel { top: auto; bottom: 0; left: 0; right: 0; width: 100%; border-radius: 32px 32px 0 0; max-height: 75vh; }
-  .guideCard { width: calc(100% - 40px); }
-}
-
-</style>
+        /* --- 나머지 기존 스타일 (지도, 패널, 사이드바 등) 유지 --- */
+        #main-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 1s ease-in-out; z-index: 5; }
+        #main-content.fade-in { opacity: 1; visibility: visible; }
+        .map-card { width: 96%; height: 92%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(30px); border: 1px solid var(--glass-border); border-radius: 28px; display: flex; overflow: hidden; position: relative; }
+        .map-main-area { flex: 1; position: relative; display: flex; flex-direction: column; }
+        .map-header { padding: 1.2rem 2.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; z-index: 20; }
+        .map-body { flex: 1; position: relative; width: 100%; height: 100%; }
+        #map { width: 100%; height: 100%; z-index: 1; position: absolute; top: 0; left: 0; }
+        .sidebar { width: 380px; border-left: 1px solid var(--glass-border); background: rgba(15, 23, 42, 0.4); display: flex; flex-direction: column; padding: 1.5rem; z-index: 30; overflow-y: auto; }
+        .control-panel { position: absolute; top: 20px; left: 20px; z-index: 40; width: 280px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.2rem; color: white; }
+        .hidden { display: none !important; }
+        select, input, button { width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 8px; border: 1px solid var(--glass-border); background: #1e293b; color: white; outline: none; }
+        .modeBtn { width: auto; padding: 8px 15px; margin-right: 5px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: var(--text-secondary); cursor: pointer; }
+        .modeBtn.active { background: var(--accent-blue); color: white; }
+        #runRoute, #enterMap, #nextFloorBtn { background: var(--accent-blue); border: none; font-weight: 600; cursor: pointer; }
+        #closeRoutePanel { background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 5px; font-size: 0.8rem; cursor: pointer; width: auto; }
+        #floorOverlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); padding: 20px 40px; border-radius: 50px; z-index: 1000; pointer-events: none; font-weight: 700; }
+    </style>
 </head>
-
 <body>
 
-  <!-- 1. GUIDE SCREEN (최초 진입) -->
-  <div id="guidePanel">
-    <div class="guideCard">
-      <div class="guideTitle">실내 내비게이션</div>
-      <div class="guideDesc">건물과 층을 선택하여<br>스마트한 길 안내를 시작하세요.</div>
-      <label>건물 선택</label>
-      <select id="buildingSel"></select>
-      <label>층 선택</label>
-      <select id="floorSel"></select>
-      <button id="enterMap" class="primaryBtn">지도 진입하기</button>
-      <button class="btn-main btn-secondary" onclick="location.href='/html/campus/map_outdoor.html'">캠퍼스 지도 바로가기</button>
+    <!-- 1. Hero Section (map_outdoor와 동일하게 교체됨) -->
+    <section id="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Campus Navigator</h1>
+            <p class="hero-subtitle">AI 기반 스마트 캠퍼스 실내 경로 안내 서비스</p>
+            <div class="button-group">
+                <button class="btn btn-primary" id="btn-start">서비스 시작하기</button>
+                <button class="btn btn-secondary" id="btn-map">실외 지도 바로가기</button>
+            </div>
+        </div>
+    </section>
 
-    </div>
-  </div>
+    <!-- 2. Main Content (기존 레이아웃 유지) -->
+    <main id="main-content">
+        <div class="map-card">
+            <div class="map-main-area">
+                <header class="map-header">
+                    <div style="font-weight: 700; font-size: 1.2rem;">Smart Campus Map</div>
+                    <div id="statusText" style="font-size: 0.85rem; color: var(--text-secondary);">📍 위치 설정 대기 중</div>
+                </header>
 
-  <!-- 2. MAP -->
-  <div id="map"></div>
+                <div class="map-body">
+                    <div id="map"></div>
+                    <div id="floorOverlay" class="hidden"></div>
 
-  <!-- 3. ROUTE PANEL (모든 제어 통합: 건물/층 + 경로탐색) -->
-  <div id="routePanel" class="hidden">
-    <div class="routeHeader">
-      <div class="routeTitle">경로 탐색</div>
-      <button id="closeRoutePanel" class="closeBtn">×</button>
-    </div>
+                    <!-- 가이드 패널 -->
+                    <div id="guidePanel" class="control-panel">
+                        <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 10px;">📍 위치 설정</div>
+                        <select id="buildingSel"></select>
+                        <select id="floorSel"></select>
+                        <button id="enterMap">지도 보기</button>
+                    </div>
+                </div>
+            </div>
 
-    <!-- [통합된 컨트롤 영역] 상단 중앙 카드를 이 안으로 이동 -->
-    <div class="locationSelector">
-      <div class="locationSelector-title">현재 위치 설정</div>
-      <label>건물</label>
-      <select id="buildingMini"></select>
-      <label>층</label>
-      <select id="floorMini"></select>
-    </div>
+            <!-- 사이드바 -->
+            <aside class="sidebar" id="routePanel">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <span style="font-weight: 700; font-size: 1.2rem; color: var(--accent-blue);">🧭 경로 탐색</span>
+                    <button id="closeRoutePanel" style="width:auto; padding: 2px 8px;">닫기</button>
+                </div>
+                
+                <div style="display:flex; gap:8px; margin-bottom: 20px;">
+                    <select id="buildingMini"></select>
+                    <select id="floorMini"></select>
+                </div>
 
-    <!-- 출발지 -->
-    <div class="routeSection">
-      <div class="routeSectionTitle">출발지 (Start)</div>
-      <label>층</label>
-      <select id="startFloor"></select>
-      <label>노드</label>
-      <select id="startNode"></select>
-    </div>
+                <div style="display:flex; gap:4px; margin-bottom: 20px;">
+                    <button class="modeBtn active" data-mode="optimal">최적</button>
+                    <button class="modeBtn" data-mode="shortest">최단</button>
+                    <button class="modeBtn" data-mode="avoid_stairs">계단회피</button>
+                </div>
 
-    <!-- 도착지 -->
-    <div class="routeSection">
-      <div class="routeSectionTitle">도착지 (Destination)</div>
-      <label>층</label>
-      <select id="endFloor"></select>
-      <label>노드</label>
-      <select id="endNode"></select>
-    </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="font-size: 0.8rem; color: var(--text-secondary);">출발지</label>
+                    <select id="startFloor"></select>
+                    <select id="startNode"></select>
+                    <label style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 10px; display: block;">도착지</label>
+                    <select id="endFloor"></select>
+                    <select id="endNode"></select>
+                </div>
 
-    <!-- 모드 선택 -->
-    <div class="modeWrap">
-      <button class="modeBtn active" data-mode="optimal">최적 경로</button>
-      <button class="modeBtn" data-mode="stairs_avoid">계단 회피</button>
-    </div>
+                <button id="runRoute">경로 탐색 시작</button>
+                <button id="nextFloorBtn" class="hidden" style="background: #8b5cf6;">다음 층 이동 ➔</button>
+            </aside>
+        </div>
+    </main>
 
-    <button id="runRoute" class="primaryBtn">경로 탐색 시작</button>
-    <button id="nextFloorBtn" class="primaryBtn hidden">다음 층으로 이동</button>
-  </div>
-
-  <!-- 4. FLOOR OVERLAY -->
-  <div id="floorOverlay" class="hidden"></div>
-
-  <!-- 5. ENV & SCRIPTS -->
-  <script>
-    window.__ENV = {
-      SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
-      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
-    };
-  </script>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script type="module" src="../../js/campus/map_indoor.js"></script>
-
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- JS 파일 경로 확인 필수 -->
+    <script type="module" src="/js/campus/map_indoor.js"></script>
 </body>
 </html>
