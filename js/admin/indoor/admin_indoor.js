@@ -21,7 +21,11 @@ let nodeMarkers = [];
 let edgeLines = [];
 let selectedNodes = [];
 
-// --- DOM 요소 참조 (HTML ID 기준) ---
+// [추가] Shift 연속 생성 기능을 위한 변수
+let isShiftPressed = false;
+let shiftSelectionQueue = []; 
+
+// --- DOM 요소 참조 ---
 const statusEl = document.getElementById('status');
 const views = document.querySelectorAll('.view');
 const tabs = document.querySelectorAll('.tab');
@@ -70,7 +74,6 @@ function switchView(m) {
 
 // --- 데이터 로딩 로직 ---
 
-// 건물 목록 로드
 async function loadBuildings() {
   const { data, error } = await supabase.from('buildings').select('*');
   if (!error) {
@@ -82,7 +85,6 @@ async function loadBuildings() {
   }
 }
 
-// 셀렉트 박스 채우기
 function fillBuildingSelect(sel) {
   if (!sel) return;
   sel.innerHTML = '<option value="">건물 선택</option>';
@@ -94,7 +96,6 @@ function fillBuildingSelect(sel) {
   });
 }
 
-// 층 목록 로드
 async function loadFloors() {
   const { data, error } = await supabase.from('floors').select('*');
   if (!error) {
@@ -105,7 +106,6 @@ async function loadFloors() {
   }
 }
 
-// 관리 탭: 층 목록 렌더링
 function renderFloorList() {
   const bFilter = searchBuilding.value.trim();
   const fFilter = searchFloor.value.trim();
@@ -134,7 +134,6 @@ function renderFloorList() {
     floorList.appendChild(div);
   });
 
-  // 이벤트 위임 대신 직접 할당 (기존 구조 유지)
   floorList.querySelectorAll('.item-actions button').forEach(btn => {
     btn.onclick = async () => {
       const id = btn.dataset.id;
@@ -157,7 +156,6 @@ function renderFloorList() {
 
 // --- 등록 기능 ---
 
-// 건물 추가
 btnAddBuilding.onclick = async () => {
   const name = bName.value.trim();
   if (!name) { setStatus('건물 이름을 입력하세요.'); return; }
@@ -172,7 +170,6 @@ btnAddBuilding.onclick = async () => {
   }
 };
 
-// 이미지 업로드 (Supabase Storage)
 btnUpload.onclick = async () => {
   try {
     const file = fileInput.files?.[0];
@@ -196,7 +193,6 @@ btnUpload.onclick = async () => {
   }
 };
 
-// 평면도 등록
 btnAddFloor.onclick = async () => {
   const bid = Number(fBuildingSel.value);
   const flr = Number(fFloorNum.value);
@@ -208,7 +204,7 @@ btnAddFloor.onclick = async () => {
     building_id: bid,
     floor_number: flr,
     map_image_url: img,
-    scale: 1.0 // 기본값
+    scale: 1.0
   });
 
   if (error) {
@@ -223,7 +219,6 @@ btnAddFloor.onclick = async () => {
 
 // --- 편집 기능 (Map & Nodes/Edges) ---
 
-// 편집 대상 로드
 btnLoadFloor.onclick = async () => {
   const bid = Number(selBuildingSel.value);
   const flr = Number(selFloor.value);
@@ -245,7 +240,6 @@ async function loadNodesEdges(floorId) {
   const { data: e } = await supabase.from('indoor_edges').select('*');
   
   nodes = n || [];
-  // 현재 층에 존재하는 노드들 사이의 엣지만 필터링
   edges = (e || []).filter(ed => 
     nodes.some(nn => nn.id === ed.from_node) && 
     nodes.some(nn => nn.id === ed.to_node)
@@ -255,7 +249,7 @@ async function loadNodesEdges(floorId) {
 
 function loadImage(floor) {
   if (imageLayer) map.removeLayer(imageLayer);
-  const w = 1000, h = 1000; // 기본 해상도 설정
+  const w = 1000, h = 1000; 
   const bounds = [[0, 0], [h, w]];
   imageLayer = L.imageOverlay(floor.map_image_url, bounds).addTo(map);
   map.fitBounds(bounds);
@@ -266,7 +260,6 @@ function renderMap() {
   edgeLines.forEach(l => map.removeLayer(l));
   nodeMarkers = []; edgeLines = [];
 
-  // 1. 엣지(경로) 그리기
   edges.forEach(e => {
     const from = nodes.find(n => n.id === e.from_node);
     const to = nodes.find(n => n.id === e.to_node);
@@ -277,7 +270,6 @@ function renderMap() {
     edgeLines.push(line);
   });
 
-  // 2. 노드(지점) 그리기
   nodes.forEach(n => {
     const m = L.circleMarker([n.y, n.x], {
       radius: 7, color: '#2563eb', weight: 3, fillOpacity: 0.8, draggable: true
@@ -285,11 +277,9 @@ function renderMap() {
     
     m.bindTooltip(`${n.name || '노드'} (ID: ${n.id})`);
     
-    // 드래그 종료 시 좌표 업데이트
     m.on('dragend', async ev => {
       const { lat, lng } = ev.target.getLatLng();
       await supabase.from('indoor_nodes').update({ x: lng, y: lat }).eq('id', n.id);
-      // 위치 변경 후 엣지 라인 재렌더링을 위해 다시 로드
       loadNodesEdges(currentFloor.id);
     });
 
@@ -304,8 +294,20 @@ function styleEdge(e) {
   return { color: '#10b981', weight: 3 };
 }
 
-// 노드 선택 및 엣지 생성 흐름
+// --- [핵심] 노드 선택 및 Shift 연속 생성 로직 ---
+
 async function handleNodeSelect(n) {
+  // 1. Shift 키가 눌려있는 경우 (연속 생성 모드)
+  if (isShiftPressed) {
+    shiftSelectionQueue.push(n.id);
+    setStatus(`연속 선택 중: ${shiftSelectionQueue.length}개 노드`);
+    
+    const marker = nodeMarkers.find(m => m.getLatLng().lat === n.y && m.getLatLng().lng === n.x);
+    if (marker) marker.setStyle({ color: '#f59e0b', weight: 5 }); // 주황색 강조
+    return;
+  }
+
+  // 2. Shift 키가 없는 경우 (기존 1:1 방식)
   if (selectedNodes.includes(n.id)) {
     selectedNodes = selectedNodes.filter(id => id !== n.id);
   } else {
@@ -321,7 +323,55 @@ async function handleNodeSelect(n) {
   }
 }
 
-// [핵심] 엣지 생성 및 Scale 자동 설정
+// Shift 키 이벤트 핸들러
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Shift' && !isShiftPressed) {
+    isShiftPressed = true;
+    shiftSelectionQueue = [];
+    setStatus('연속 생성 모드 활성화 (Shift)');
+  }
+});
+
+document.addEventListener('keyup', async (e) => {
+  if (e.key === 'Shift' && isShiftPressed) {
+    isShiftPressed = false;
+
+    if (shiftSelectionQueue.length < 2) {
+      setStatus('선택된 노드가 부족합니다.');
+      resetNodeStyles();
+      return;
+    }
+
+    const confirmMsg = `총 ${shiftSelectionQueue.length - 1}개의 경로를 생성하시겠습니까?\n(모두 'walk', '양방향'으로 설정됩니다)`;
+    if (!confirm(confirmMsg)) {
+      resetNodeStyles();
+      shiftSelectionQueue = [];
+      setStatus('생성이 취소되었습니다.');
+      return;
+    }
+
+    setStatus('연속 엣지 생성 중...');
+    try {
+      for (let i = 0; i < shiftSelectionQueue.length - 1; i++) {
+        await createEdgeBatch(shiftSelectionQueue[i], shiftSelectionQueue[i + 1]);
+      }
+      setStatus('연속 생성 완료!');
+    } catch (err) {
+      console.error(err);
+      setStatus('생성 중 오류 발생');
+    } finally {
+      shiftSelectionQueue = [];
+      resetNodeStyles();
+      loadNodesEdges(currentFloor.id);
+    }
+  }
+});
+
+function resetNodeStyles() {
+  nodeMarkers.forEach(m => m.setStyle({ color: '#2563eb', weight: 3 }));
+}
+
+// 기존 단일 엣지 생성 (Prompt 포함)
 async function createEdge(a, b) {
   const from = nodes.find(n => n.id === a);
   const to = nodes.find(n => n.id === b);
@@ -334,45 +384,51 @@ async function createEdge(a, b) {
   const is_bidirectional = bidir;
 
   let realDist = 0;
-
-  // Scale이 없거나 1인 경우 (축척 미설정 상태)
   if (!currentFloor.scale || currentFloor.scale === 1) {
     const mInput = prompt(`[축척 미설정] 이 구간의 실제 거리(m)를 입력하세요:\n현재 픽셀 거리: ${pxDist.toFixed(2)}px`, pxDist.toFixed(2));
-    
     if (mInput && !isNaN(mInput) && parseFloat(mInput) > 0) {
       const mDist = parseFloat(mInput);
-      const newScale = pxDist / mDist; // scale = px / m
-      
+      const newScale = pxDist / mDist;
       await supabase.from('floors').update({ scale: newScale }).eq('id', currentFloor.id);
       currentFloor.scale = newScale;
       realDist = mDist;
-      alert(`축척이 설정되었습니다: 1m = ${newScale.toFixed(4)}px`);
     } else {
-      alert('입력이 취소되었습니다. 엣지를 생성하지 않습니다.');
+      alert('입력이 취소되었습니다.');
       return;
     }
   } else {
-    // 이미 scale이 있는 경우 픽셀 거리를 scale로 나누어 실제 거리 계산
     realDist = pxDist / currentFloor.scale;
   }
 
-  const { error } = await supabase.from('indoor_edges').insert({
+  await supabase.from('indoor_edges').insert({
+    from_node: from.id, to_node: to.id, distance: realDist,
+    px_distance: pxDist, type, direction, is_bidirectional
+  });
+}
+
+// [추가] Shift용 배치 생성 (Prompt 없음)
+async function createEdgeBatch(a, b) {
+  const from = nodes.find(n => n.id === a);
+  const to = nodes.find(n => n.id === b);
+  if (!from || !to) return;
+
+  const pxDist = calcPxDistance(from, to);
+  const realDist = (currentFloor.scale && currentFloor.scale !== 1) ? (pxDist / currentFloor.scale) : pxDist;
+
+  await supabase.from('indoor_edges').insert({
     from_node: from.id,
     to_node: to.id,
     distance: realDist,
     px_distance: pxDist,
-    type,
-    direction,
-    is_bidirectional
+    type: 'walk',
+    direction: 'bidirectional',
+    is_bidirectional: true
   });
-
-  if (error) setStatus('엣지 생성 실패');
-  else setStatus('엣지 생성 완료');
 }
 
-// [핵심] 엣지 수정/삭제 및 Scale 재설정
+// 엣지 수정/삭제
 async function openEdgeModal(e) {
-  const action = prompt(`[EDGE ID: ${e.id}]\n1: 수정 (거리/타입)\n2: 삭제\n3: [층 전체] 축척 재설정\n\n현재 정보:\n타입: ${e.type}\n거리: ${e.distance.toFixed(2)}m`);
+  const action = prompt(`[EDGE ID: ${e.id}]\n1: 수정\n2: 삭제\n3: [층 전체] 축척 재설정\n\n현재 정보:\n타입: ${e.type}\n거리: ${e.distance.toFixed(2)}m`);
 
   if (action === '2') {
     if (!confirm('정말 삭제하시겠습니까?')) return;
@@ -385,81 +441,49 @@ async function openEdgeModal(e) {
     const dist = parseFloat(prompt('실제 거리(m)를 입력하세요', e.distance));
     const type = prompt('경로 타입을 입력하세요 (walk/stairs/elevator)', e.type);
     const bidir = confirm('양방향 경로입니까?');
-    
     if (!isNaN(dist) && type) {
       await supabase.from('indoor_edges').update({
-        distance: dist,
-        type,
-        direction: bidir ? 'bidirectional' : 'one-way',
-        is_bidirectional: bidir
+        distance: dist, type, direction: bidir ? 'bidirectional' : 'one-way', is_bidirectional: bidir
       }).eq('id', e.id);
       loadNodesEdges(currentFloor.id);
     }
   }
 
   if (action === '3') {
-    const input = prompt('새 축척 기준을 입력하세요.\n형식: "픽셀거리,실제거리" (예: 150,5 \n -> 150px가 5m라는 의미)');
+    const input = prompt('새 축척 기준을 입력하세요.\n형식: "픽셀거리,실제거리" (예: 150,5)');
     if (input && input.includes(',')) {
       const [pStr, mStr] = input.split(',');
-      const pVal = parseFloat(pStr);
-      const mVal = parseFloat(mStr);
-
+      const pVal = parseFloat(pStr), mVal = parseFloat(mStr);
       if (!isNaN(pVal) && !isNaN(mVal) && mVal > 0) {
-        const newScale = pVal / mVal;
-        await supabase.from('floors').update({ scale: newScale }).eq('id', currentFloor.id);
-        alert(`층 축척이 ${newScale.toFixed(4)}로 재설정되었습니다. 페이지를 새로고침합니다.`);
-        location.reload(); // 데이터 동기화를 위해 새로고침
-      } else {
-        alert('올바른 숫자 형식이 아닙니다.');
+        await supabase.from('floors').update({ scale: pVal / mVal }).eq('id', currentFloor.id);
+        location.reload();
       }
     }
   }
 }
 
-// --- 거리 계산 엔진 ---
+// --- 거리 계산 및 기타 ---
 
-// 순수 픽셀 거리
 function calcPxDistance(a, b) {
   const dx = a.x - b.x;
   const dy = a.y - b.y;
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-// 실제 거리 (Scale 적용)
-function calcDistance(a, b) {
-  const pxDist = calcPxDistance(a, b);
-  if (currentFloor && currentFloor.scale && currentFloor.scale !== 1) {
-    return pxDist / currentFloor.scale;
-  }
-  return pxDist;
-}
-
-// --- 지도 이벤트 및 초기화 ---
-
-// 노드 추가 (더블 클릭)
 map.on('dblclick', async (e) => {
   if (!currentFloor) { setStatus('먼저 평면도를 불러오세요.'); return; }
-  
   const name = prompt('새 노드의 이름을 입력하세요');
   if (!name) return;
 
   const { error } = await supabase.from('indoor_nodes').insert({
-    name,
-    x: e.latlng.lng,
-    y: e.latlng.lat,
-    building_id: currentFloor.building_id,
-    floor_id: currentFloor.id,
-    type: 'normal'
+    name, x: e.latlng.lng, y: e.latlng.lat,
+    building_id: currentFloor.building_id, floor_id: currentFloor.id, type: 'normal'
   });
 
-  if (error) {
-    setStatus('노드 생성 실패');
-  } else {
-    loadNodesEdges(currentFloor.id);
-  }
+  if (error) setStatus('노드 생성 실패');
+  else loadNodesEdges(currentFloor.id);
 });
 
-// ESC 키로 선택 초기화
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     selectedNodes = [];
@@ -467,11 +491,9 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// 검색 입력 시 리스트 갱신
 searchBuilding.oninput = renderFloorList;
 searchFloor.oninput = renderFloorList;
 
-// 초기 실행
 async function init() {
   await loadBuildings();
   await loadFloors();
