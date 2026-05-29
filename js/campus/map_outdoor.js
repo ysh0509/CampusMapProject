@@ -289,6 +289,15 @@ function setActive(i) {
 
 // 5. 유틸리티 함수 (기존 로직 유지)
 
+function label(type) {
+  const labels = {
+    'optimal': '최적 경로',
+    'fastest': '최단 시간',
+    'stairs_avoid': '계단 제외'
+  };
+  return labels[type] || type;
+}
+
 function calcTime(path) {
   if (!state.graph) return 0;
   let totalSec = 0;
