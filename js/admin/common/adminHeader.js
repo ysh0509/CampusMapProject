@@ -44,6 +44,12 @@ export function initAdminHeader(active = '') {
     display: flex;
     align-items: center;
     gap: 8px;
+    cursor: pointer; /* 클릭 가능함을 표시 */
+    transition: opacity 0.2s;
+  }
+
+  .logo:hover {
+    opacity: 0.8;
   }
 
   .logo i { color: var(--admin-accent); }
@@ -116,7 +122,6 @@ export function initAdminHeader(active = '') {
   const header = document.createElement('div');
   header.className = 'admin-header';
 
-  // 아이콘을 추가하여 시각적 인지도를 높임
   header.innerHTML = `
     <div class="admin-left">
       <div class="logo"><i class="fas fa-shield-halved"></i> SUPER ADMIN</div>
@@ -145,6 +150,7 @@ export function initAdminHeader(active = '') {
 
   const base = '/html/admin';
   const routes = {
+    main: '/index.html', // 메인 페이지 경로 추가
     dashboard: `${base}/admin_dashboard.html`,
     vision: `${base}/admin_vision_control.html`,
     outdoor: `${base}/outdoor/admin_outdoor_map.html`,
@@ -154,6 +160,14 @@ export function initAdminHeader(active = '') {
     occupancy: `${base}/admin_occupancy.html`,
     gate: `${base}/indoor/transfer_edges.html`
   };
+
+  // 로고 클릭 시 메인 페이지로 이동
+  const logo = header.querySelector('.logo');
+  if (logo) {
+    logo.onclick = () => {
+      location.href = routes.main;
+    };
+  }
 
   header.querySelectorAll('[data-page]').forEach(btn => {
     btn.onclick = () => {

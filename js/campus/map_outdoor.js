@@ -154,9 +154,9 @@ function generateGuideText(path, nodeMap, nodeDegreeMap) {
     const isHub = degree >= 10;
     const name = node.name ? node.name.trim() : null;
 
-    if (isTransferNode || isHub) {
+    if ((isTransferNode || isHub) && name) {
       return { 
-        text: name || '연결 지점', 
+        text: name, 
         isCongested: isCongested 
       };
     }
