@@ -149,9 +149,9 @@ function generateGuideText(path, nodeMap, nodeDegreeMap) {
     const congestion = state.nodeStatus.get(`${scope}_${targetId}`);
     const isCongested = congestion === 'HIGH';
 
-    // 3. 거점(Degree >= 8) 판별
+    // 3. 거점(Degree >= 10) 판별
     const degree = (nodeDegreeMap && nodeDegreeMap.get(strId)) || 0;
-    const isHub = degree >= 8;
+    const isHub = degree >= 10;
     const name = node.name ? node.name.trim() : null;
 
     if (isTransferNode || isHub) {
