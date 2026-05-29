@@ -287,7 +287,7 @@ async function createEdge() {
 // =========================
 async function openEdgeModal(edge) {
   const action = prompt(
-    `EDGE: ${edge.name}\r\n1: 수정\r\n2: 삭제\r\n3: 타입 변경 (walk / stairs / elevator / escalator / subway)`
+    `EDGE: ${edge.name}\r\r${edge.id}\n1: 수정\r\n2: 삭제\r\n3: 타입 변경 (walk / stairs / elevator / escalator / subway)`
   );
 
   if (action === '2') { // 삭제

@@ -1,157 +1,138 @@
 <!DOCTYPE html>
-<script>
-   window.__ENV = {
-     SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
-     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
-   };
- </script>
-<html lang="ko">
+<html lang="ko" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Campus | Integrated Navigation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Campus Navigator | Smart Campus AI</title>
+    
+    <!-- Libraries -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
-    <style>
-        :root {
-            --bg-dark: #020617;
-            --accent-blue: #3b82f6;
-            --text-primary: #ffffff;
-            --text-secondary: #94a3b8;
-            --glass-border: rgba(255, 255, 255, 0.1);
-        }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg-dark); color: var(--text-primary); overflow: hidden; font-family: 'Pretendard', sans-serif; }
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@1.3.9/web/static/pretendard.css" />
+    <link rel="stylesheet" href="../../css/campus/nav.css">
 
-        /* Hero Section */
-        #hero-section {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 100; background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
-            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), visibility 1s;
-        }
-        #hero-section.fade-out { opacity: 0; visibility: hidden; }
-        .hero-content { text-align: center; animation: fadeInUp 1.2s ease-out; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        .hero-title { font-size: 4.5rem; font-weight: 800; margin-bottom: 1rem; background: linear-gradient(to bottom, #ffffff 30%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.05em; }
-        .hero-subtitle { font-size: 1.4rem; color: var(--text-secondary); margin-bottom: 3.5rem; }
-        .button-group { display: flex; gap: 2rem; }
-        .btn { padding: 1.2rem 3.5rem; border-radius: 12px; font-size: 1.1rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-primary { background: var(--accent-blue); color: white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
-        .btn-secondary { background: rgba(255, 255, 255, 0.05); color: white; border: 1px solid var(--glass-border); }
-        .btn:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-
-        /* Main Content */
-        #main-content { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 1s ease-in-out; z-index: 5; }
-        #main-content.fade-in { opacity: 1; visibility: visible; }
-        .map-card { width: 96%; height: 92%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(30px); border: 1px solid var(--glass-border); border-radius: 28px; display: flex; overflow: hidden; position: relative; }
-        .map-main-area { flex: 1; position: relative; display: flex; flex-direction: column; }
-        .map-header { padding: 1.2rem 2.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; z-index: 20; }
-        .map-body { flex: 1; position: relative; width: 100%; height: 100%; }
-        #map { width: 100%; height: 100%; z-index: 1; position: absolute; top: 0; left: 0; }
-        
-        /* Sidebar (Combined Controls) */
-        .sidebar { width: 400px; border-left: 1px solid var(--glass-border); background: rgba(15, 23, 42, 0.4); display: flex; flex-direction: column; padding: 1.5rem; z-index: 30; overflow-y: auto; }
-        .control-panel { position: absolute; top: 20px; left: 20px; z-index: 40; width: 300px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(15px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 1.2rem; color: white; }
-        
-        .hidden { display: none !important; }
-        select, input, button { width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 8px; border: 1px solid var(--glass-border); background: #1e293b; color: white; outline: none; }
-        .modeBtn { width: auto; padding: 8px 15px; margin-right: 5px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: var(--text-secondary); cursor: pointer; }
-        .modeBtn.active { background: var(--accent-blue); color: white; }
-        #runRoute, #nextFloorBtn { background: var(--accent-blue); border: none; font-weight: 600; cursor: pointer; }
-        #floorOverlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); padding: 20px 40px; border-radius: 50px; z-index: 1000; pointer-events: none; font-weight: 700; }
-        
-        .route-card { padding: 15px; margin-bottom: 10px; border-radius: 12px; background: rgba(255,255,255,0.05); cursor: pointer; border: 1px solid transparent; }
-        .route-card.active { border-color: var(--accent-blue); background: rgba(59, 130, 246, 0.1); }
-        .route-card.disabled { opacity: 0.5; cursor: not-allowed; }
-        .guide-text { font-size: 0.9rem; margin-top: 8px; color: var(--accent-blue); }
-    </style>
+    <script>
+        window.__ENV = {
+            SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+            SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+        };
+    </script>
 </head>
 <body>
+    <!-- Map Container -->
+    <div id="map"></div>
 
-    <section id="hero-section">
-        <div class="hero-content">
-            <h1 class="hero-title">Campus Navigator</h1>
-            <p class="hero-subtitle">AI 기반 스마트 캠퍼스 통합 경로 안내 서비스</p>
-            <div class="button-group">
-                <button class="btn btn-primary" id="btn-start">서비스 시작하기</button>
-            </div>
+    <!-- Top Overlay: Status & Theme -->
+    <div class="top-overlay">
+        <div class="status-badge">
+            <span class="pulse-dot"></span>
+            <span id="statusText">시스템 준비 완료</span>
         </div>
-    </section>
+        <button id="themeBtn" class="icon-btn" title="테마 변경">
+            <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+    </div>
 
-    <main id="main-content">
-        <div class="map-card">
-            <div class="map-main-area">
-                <header class="map-header">
-                    <div style="font-weight: 700; font-size: 1.2rem;">Integrated Map</div>
-                    <div id="statusText" style="font-size: 0.85rem; color: var(--text-secondary);">📍 준비 완료</div>
-                </header>
+    <!-- Left Sidebar: Search & Controls -->
+    <aside class="control-panel">
+        <div class="panel-header">
+            <h1>Campus Navigator</h1>
+            <p>Seamless Indoor/Outdoor Routing</p>
+        </div>
 
-                <div class="map-body">
-                    <div id="map"></div>
-                    <div id="floorOverlay" class="hidden"></div>
+        <!-- Search Section -->
+        <section class="search-section">
+            <!-- START POINT -->
+            <div class="input-group">
+                <label>출발지 (Start)</label>
+                <!-- Type Selector (External / Internal) -->
+                <div id="startToggle" class="toggle-group">
+                    <div class="toggle active" data-type="outdoor">외부</div>
+                    <div class="toggle" data-type="indoor">내부</div>
+                </div>
 
-                    <!-- 통합 위치 설정 패널 -->
-                    <div id="locationPanel" class="control-panel">
-                        <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 10px;">📍 위치 설정</div>
-                        <select id="locationType">
-                            <option value="outdoor">실외/전체</option>
-                            <option value="indoor">특정 건물 내부</option>
-                        </select>
-                        <div id="buildingSection" class="hidden">
-                            <select id="buildingSel"></select>
-                            <select id="floorSel"></select>
-                        </div>
-                        <button id="applyLocation">위치 적용</button>
-                    </div>
+                <!-- External Search (Map Click / Text Search) -->
+                <div class="search-box">
+                    <input type="text" id="startSearch" placeholder="지도 클릭 또는 검색..." autocomplete="off">
+                    <div id="startDropdown" class="dropdown-list hidden"></div>
+                </div>
+                <div class="selection-info" id="startDisplay">지도를 클릭하거나 검색하세요</div>
+
+                <!-- Internal Hierarchy Select (Building > Floor > Node) -->
+                <div id="startIndoorBox" class="indoor-controls hidden">
+                    <select id="startBuilding"><option value="">건물 선택</option></select>
+                    <select id="startFloorSel"><option value="">층 선택</option></select>
+                    <select id="startIndoorSel"><option value="">노드 선택</option></select>
                 </div>
             </div>
 
-            <aside class="sidebar" id="routePanel">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <span style="font-weight: 700; font-size: 1.2rem; color: var(--accent-blue);">🧭 경로 탐색</span>
-                    <button id="closeRoutePanel" style="width:auto; padding: 2px 8px;">닫기</button>
-                </div>
-                
-                <div style="display:flex; gap:4px; margin-bottom: 20px;">
-                    <button class="modeBtn active" data-mode="optimal">최적</button>
-                    <button class="modeBtn" data-mode="fastest">최단 시간</button>
-                    <button class="modeBtn" data-mode="avoid_stairs">계단회피</button>
+            <hr class="divider">
+
+            <!-- END POINT -->
+            <div class="input-group">
+                <label>도착지 (Destination)</label>
+                <!-- Type Selector (External / Internal) -->
+                <div id="endToggle" class="toggle-group">
+                    <div class="toggle active" data-type="outdoor">외부</div>
+                    <div class="toggle" data-type="indoor">내부</div>
                 </div>
 
-                <div style="margin-bottom: 20px;">
-                    <label style="font-size: 0.8rem; color: var(--text-secondary);">출발지</label>
-                    <select id="startLocationType">
-                        <option value="outdoor">실외 노드</option>
-                        <option value="indoor">건물 내 노드</option>
-                    </select>
-                    <div id="startIndoorSection" class="hidden">
-                        <select id="startBuilding"></select>
-                        <select id="startFloor"></select>
-                    </div>
-                    <select id="startNode"></select>
-
-                    <label style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 10px; display: block;">도착지</label>
-                    <select id="endLocationType">
-                        <option value="outdoor">실외 노드</option>
-                        <option value="indoor">건물 내 노드</option>
-                    </select>
-                    <div id="endIndoorSection" class="hidden">
-                        <select id="endBuilding"></select>
-                        <select id="endFloor"></select>
-                    </div>
-                    <select id="endNode"></select>
+                <!-- External Search -->
+                <div class="search-box">
+                    <input type="text" id="endSearch" placeholder="지도 클릭 또는 검색..." autocomplete="off">
+                    <div id="endDropdown" class="dropdown-list hidden"></div>
                 </div>
+                <div class="selection-info" id="endDisplay">지도를 클릭하거나 검색하세요</div>
 
-                <button id="runRoute">경로 탐색 시작</button>
-                <button id="nextFloorBtn" class="hidden" style="background: #8b5cf6;">다음 층 이동 ➔</button>
-                
-                <div id="routeStepsBody" style="margin-top: 20px;">
-                    <!-- 경로 결과 카드가 여기에 렌더링됨 -->
+                <!-- Internal Hierarchy Select (Building > Floor > Node) -->
+                <div id="endIndoorBox" class="indoor-controls hidden">
+                    <select id="endBuilding"><option value="">건물 선택</option></select>
+                    <select id="endFloorSel"><option value="">층 선택</option></select>
+                    <select id="endIndoorSel"><option value="">노드 선택</option></select>
                 </div>
-            </aside>
+            </div>
+        </section>
+
+        <!-- Mode Section -->
+        <section class="mode-section">
+            <label>탐색 모드</label>
+            <div class="mode-group">
+                <button class="modeBtn active" data-mode="optimal">최적 경로</button>
+                <button class="modeBtn" data-mode="fastest">최단 시간</button>
+                <button class="modeBtn" data-mode="avoid_stairs">계단 회피</button>
+            </div>
+        </section>
+
+        <!-- Action Buttons -->
+        <section class="action-section">
+            <button id="runRoute" class="btn-primary">경로 탐색 시작</button>
+            <button id="resetBtn" class="btn-secondary">초기화</button>
+        </section>
+    </aside>
+
+    <!-- Right Panel: Navigation Details -->
+    <aside id="routeDetailCard" class="detail-panel hidden">
+        <div class="panel-header">
+            <h3>Navigation Details</h3>
+            <button id="closeDetail" class="close-btn">&times;</button>
         </div>
-    </main>
+        <div id="routeInfoContent" class="route-content">
+            <!-- Dynamic content from JS -->
+        </div>
+        <div id="indoorTransitionBox" class="transition-box hidden">
+            <p>실내 구간이 포함되어 있습니다.</p>
+            <button id="seeIndoorBtn" class="btn-accent">실내 도면 보기</button>
+        </div>
+    </aside>
 
+    <!-- Floating Map Controls -->
+    <div class="map-controls">
+        <button id="toggleLayerBtn" class="icon-btn" title="레이어 전환">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/></svg>
+        </button>
+    </div>
+
+    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module" src="/js/campus/navigate.js"></script>
 </body>

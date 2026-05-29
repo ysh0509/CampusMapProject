@@ -360,6 +360,7 @@ async function createEdge(a, b) {
     from_node: from.id,
     to_node: to.id,
     distance: realDist,
+    px_distance: pxDist,
     type,
     direction,
     is_bidirectional

@@ -49,7 +49,8 @@ export function buildUnifiedGraph({
     const scale = floorScaleMap.get(Number(floorId)) || 1.0;
 
     // 2. distance(픽셀 단위)에 scale을 곱하여 실제 미터(m) 단위로 변환
-    const realDistance = (e.distance || 0) * scale;
+    // admin_indoor 수정으로 scale은 더이상 곱하지 않아도 됩니다. scale이 이미 적용된 distance가 저장되어 있다고 가정합니다.
+    const realDistance = (e.distance || 0);
 
     // 3. 최종 비용 계산
     const cost = realDistance + (e.type === 'stairs' ? 2 : 1);
