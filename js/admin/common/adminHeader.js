@@ -128,6 +128,7 @@ export function initAdminHeader(active = '') {
         <button data-page="elevation"><i class="fas fa-mountain"></i> Elevation</button>
         <button data-page="occupancy"><i class="fas fa-users"></i> Occupancy</button>
         <button data-page="gate"><i class="fas fa-exchange-alt"></i> Transfer</button>
+        <button data-page="vision2NE"><i class="fas fa-link"></i> Camera Map</button>
       </div>
     </div>
     <div class="logout-group">
@@ -149,7 +150,7 @@ export function initAdminHeader(active = '') {
     outdoor: `${base}/outdoor/admin_outdoor_map.html`,
     indoor: `${base}/indoor/admin_indoor.html`,
     elevation: `${base}/outdoor/admin_elevation_editor.html`,
-    vision2NE: `${base}/admin_camera_map.html`, // 기존 매핑 유지
+    vision2NE: `${base}/admin_camera_map.html`,
     occupancy: `${base}/admin_occupancy.html`,
     gate: `${base}/indoor/transfer_edges.html`
   };

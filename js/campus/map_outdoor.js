@@ -15,7 +15,8 @@ const state = {
   markers: [],
   lines: [],
   indoorNodes: [],
-  buildings: []
+  buildings: [],
+  nodeStatus: new Map() // 실시간 혼잡도 저장을 위한 Map
 };
 
 const COST_ORDER = ['optimal', 'fastest', 'stairs_avoid'];
@@ -44,15 +45,24 @@ init();
 
 async function init() {
   try {
-    const [graph, indoorRes, buildingRes] = await Promise.all([
+    const [graph, indoorRes, buildingRes, statusRes] = await Promise.all([
       loadGraph(),
       supabase.from('indoor_nodes').select('id,name,building_id,floor_id'),
-      supabase.from('buildings').select('*')
+      supabase.from('buildings').select('*'),
+      supabase.from('node_status').select('node_id,node_scope,last_congestion_level')
     ]);
 
     state.graph = graph;
     state.indoorNodes = indoorRes.data || [];
     state.buildings = buildingRes.data || [];
+    
+    // 초기 혼잡도 데이터 로드
+    if (statusRes.data) {
+      statusRes.data.forEach(s => {
+        const key = `${s.node_scope}_${s.node_id}`;
+        state.nodeStatus.set(key, s.last_congestion_level);
+      });
+    }
 
     bindUI();
     fillBuildingSelect();
@@ -69,7 +79,6 @@ async function init() {
 function bindUI() {
   if (indoorBtn) indoorBtn.onclick = openIndoorRoute;
 
-  // 토글 버튼 (카드형 디자인 대응)
   startToggle.querySelectorAll('.toggle').forEach(el => {
     el.onclick = () => {
       startToggle.querySelectorAll('.toggle').forEach(x => x.classList.remove('active'));
@@ -102,98 +111,105 @@ function bindUI() {
   resetBtn.onclick = resetAll;
 }
 
-// 4. 핵심 기능: 경로 계산 및 가이드 생성
-
-
 /**
- * [최종 완성본] 거점 중심의 경로 가이드 생성 함수
- * 1. 첫 번째 노드는 무조건 '출발지'로 표시
- * 2. 마지막 노드는 무조건 '도착지'로 표시
- * 3. 중간 노드들은 '연결된 엣지가 8개 이상인 거점'이면서 '이름이 있는 경우'에만 표시
- */
-/**
- * [개선 버전] 거점 중심 + 환승 지점(Transfer) 포함 경로 가이드 생성 함수
+ * [개선 버전] 혼잡도 알림이 포함된 경로 가이드 생성 함수
  */
 function generateGuideText(path, nodeMap, nodeDegreeMap) {
   if (!path || path.length === 0) return '경로 정보가 없습니다.';
 
-  // 1. 경로상의 모든 노드를 순회하며 필터링된 이름 배열 생성
   const meaningfulNodes = path.map((id, index) => {
     let targetId = id;
     const strId = String(id);
 
-    // 'in_' 접두어 처리
     if (strId.startsWith('in_')) {
       targetId = strId.replace('in_', '');
     }
 
-    // nodeMap에서 노드 검색
     const node = nodeMap.get(Number(targetId)) || nodeMap.get(targetId) || nodeMap.get(strId);
     if (!node) return null;
 
-    // --- [핵심 로직: 시작/끝/거점/환승 구분] ---
     const isStart = (index === 0);
     const isEnd = (index === path.length - 1);
     
-    // 1. 시작과 끝은 무조건 표시
-    if (isStart) return '출발지';
-    if (isEnd) return '도착지';
+    if (isStart) return { text: '출발지', isCongested: false };
+    if (isEnd) return { text: '도착지', isCongested: false };
 
-    // 2. 환승 지점(Transfer) 판별 로직 추가
-    // 경로의 현재 노드(id)와 다음 노드(path[index+1]) 사이의 엣지가 'transfer' 타입인지 확인
+    // 1. 환승 지점(Transfer) 판별
     let isTransferNode = false;
     if (index < path.length - 1) {
       const nextId = path[index + 1];
-      // edgeMap에서 현재 노드와 다음 노드 사이의 엣지를 찾음
-      // (주의: edgeMap은 graph_manager에서 구축된 것을 사용함)
       const nextEdge = state.graph.edgeMap.get(strId + '-' + String(nextId)) || 
                        state.graph.edgeMap.get(String(nextId) + '-' + strId);
-      
-      if (nextEdge && nextEdge.type === 'transfer') {
-        isTransferNode = true;
-      }
+      if (nextEdge && nextEdge.type === 'transfer') isTransferNode = true;
     }
+
+    // 2. 혼잡도 판별 (실시간 데이터 반영)
+    // node_status 테이블의 scope(indoor/outdoor)를 노드 타입에서 유추
+    const scope = node.type === 'outdoor' ? 'outdoor' : 'indoor';
+    const congestion = state.nodeStatus.get(`${scope}_${targetId}`);
+    const isCongested = congestion === 'HIGH';
 
     // 3. 거점(Degree >= 8) 판별
     const degree = (nodeDegreeMap && nodeDegreeMap.get(strId)) || 0;
     const isHub = degree >= 8;
     const name = node.name ? node.name.trim() : null;
 
-    // [판단 기준] 
-    // - 환승 지점이거나
-    // - 거점이거나
-    // - 이름이 있는 경우 (거점인 경우에만 이름이 있는 것만 표시하도록 기존 로직 유지 가능)
-    // 여기서는 '환승 지점' 혹은 '거점'인 경우에만 이름을 반환합니다.
     if (isTransferNode || isHub) {
-      return name || '연결 지점'; // 이름이 없으면 '연결 지점'으로 표시
+      return { 
+        text: name || '연결 지점', 
+        isCongested: isCongested 
+      };
     }
 
     return null; 
-  }).filter(name => name !== null);
+  }).filter(n => n !== null);
 
-  // 2. 결과가 없는 경우 예외 처리
   if (meaningfulNodes.length === 0) return '📍 경로를 계산 중입니다...';
   
-  // 3. 중복 제거
-  const uniqueNodes = meaningfulNodes.filter((name, idx) => name !== meaningfulNodes[idx - 1]);
+  const uniqueNodes = meaningfulNodes.filter((n, idx) => 
+    idx === 0 || n.text !== meaningfulNodes[idx - 1].text
+  );
 
-  // 4. 최종 HTML 조립
-  let result = `<span class="guide-node">${uniqueNodes[0]}</span>`;
+  let result = `<span class="guide-node">${uniqueNodes[0].text}${uniqueNodes[0].isCongested ? ' <small>⚠️ 혼잡</small>' : ''}</span>`;
   for (let i = 1; i < uniqueNodes.length; i++) {
-    result += ` <span class="guide-arrow">→</span> <span class="guide-node">${uniqueNodes[i]}</span>`;
+    const node = uniqueNodes[i];
+    const congestionTag = node.isCongested ? ' <small>⚠️ 혼잡</small>' : '';
+    result += ` <span class="guide-arrow">→</span> <span class="guide-node">${node.text}${congestionTag}</span>`;
   }
 
   return result;
 }
 
-
-
 /**
- * 경로 유형 라벨링
+ * 경로 카드 렌더링 (혼잡 정보 포함)
  */
-function label(t) {
-  const labels = { 'optimal': '최적 경로', 'fastest': '최단 시간', 'stairs_avoid': '계단 회피' };
-  return labels[t] || t;
+function renderRoutes() {
+  if (!stepsBody) return;
+  stepsBody.innerHTML = '';
+  
+  state.routes.forEach((r, i) => {
+    const card = document.createElement('div');
+    card.className = `route-card ${r.disabled ? 'disabled' : ''} ${i === state.activeRoute ? 'active' : ''}`;
+    
+    const header = document.createElement('div');
+    header.innerHTML = r.disabled
+      ? '<span style="color:#94a3b8;">❌ 이용 불가</span>'
+      : `<b>${label(r.type)}</b> <span style="float:right; font-size:12px;">⏱ ${r.time}분</span>`;
+    card.appendChild(header);
+
+    if (i === state.activeRoute && !r.disabled) {
+      const guide = document.createElement('div');
+      guide.className = 'guide-text';
+      const degreeMap = (state.graph && state.graph.nodeDegreeMap) ? state.graph.nodeDegreeMap : new Map();
+      guide.innerHTML = generateGuideText(r.path, state.graph.nodeMap, degreeMap);
+      card.appendChild(guide);
+    }
+    
+    if (!r.disabled) {
+      card.onclick = () => setActive(i);
+    }
+    stepsBody.appendChild(card);
+  });
 }
 
 async function runRoute() {
@@ -207,7 +223,6 @@ async function runRoute() {
   state.lines = [];
   state.routes = [];
 
-  // Worker를 이용한 비동기 경로 계산 (기존 로직 유지)
   const worker = new Worker('/js/campus/pathWorker.js', { type: 'module' });
   const routeMap = new Map();
   let finishedCount = 0;
@@ -230,16 +245,14 @@ async function runRoute() {
       state.routes = COST_ORDER.map(t => routeMap.get(t) || { type: t, disabled: true });
       state.activeRoute = 0;
       
-      // 첫 번째 경로(최적) 기본 활성화
       if (state.routes[0] && !state.routes[0].disabled) {
         setActive(0);
-        // 실내 경로 데이터 저장
         const indoorSegs = splitPathByType(state.routes[0].path, state.graph.nodeMap).filter(s => s.type === 'indoor');
         if (indoorSegs.length) localStorage.setItem('indoorRoute', JSON.stringify(indoorSegs));
         if (indoorBtn) indoorBtn.disabled = false;
       }
       
-      renderRoutes(); // 카드 UI 렌더링
+      renderRoutes();
       setStatus('경로 탐색 완료');
       worker.terminate();
     }
@@ -255,48 +268,6 @@ async function runRoute() {
   });
 }
 
-/**
- * 경로 카드 렌더링 (개선된 UI 대응)
- */
-// map_outdoor.js 내부 renderRoutes 함수
-
-function renderRoutes() {
-  if (!stepsBody) return;
-  stepsBody.innerHTML = '';
-  
-  state.routes.forEach((r, i) => {
-    const card = document.createElement('div');
-    card.className = `route-card ${r.disabled ? 'disabled' : ''} ${i === state.activeRoute ? 'active' : ''}`;
-    
-    const header = document.createElement('div');
-    header.innerHTML = r.disabled
-      ? '<span style="color:#94a3b8;">❌ 이용 불가</span>'
-      : `<b>${label(r.type)}</b> <span style="float:right; font-size:12px;">⏱ ${r.time}분</span>`;
-    card.appendChild(header);
-
-    if (i === state.activeRoute && !r.disabled) {
-      const guide = document.createElement('div');
-      guide.className = 'guide-text';
-      
-      // ✅ 수정된 호출 방식: nodeDegreeMap을 함께 전달
-      // 만약 state.graph.nodeDegreeMap이 없다면 빈 Map을 전달하여 에러 방지
-      const degreeMap = (state.graph && state.graph.nodeDegreeMap) ? state.graph.nodeDegreeMap : new Map();
-      guide.innerHTML = generateGuideText(r.path, state.graph.nodeMap, degreeMap);
-      
-      card.appendChild(guide);
-    }
-    
-    if (!r.disabled) {
-      card.onclick = () => setActive(i);
-    }
-    stepsBody.appendChild(card);
-  });
-}
-
-
-/**
- * 경로 선택 시 지도 및 UI 업데이트
- */
 function setActive(i) {
   state.activeRoute = i;
   clearPath(map, state.lines);
@@ -326,7 +297,7 @@ function calcTime(path) {
               state.graph.edgeMap.get(path[i + 1] + '-' + path[i]);
     if (!e) continue;
     const d = e.distance || 1;
-    totalSec += d / 1.4; // 단순 계산 (실제 로직은 이전과 동일하게 구현 가능)
+    totalSec += d / 1.4;
   }
   return Math.ceil(totalSec / 60);
 }
@@ -392,12 +363,6 @@ function clearMarkers() {
   state.markers = [];
 }
 
-/*
-function clearPath(m, lines) {
-  lines.forEach(l => m.removeLayer(l));
-}
-*/
-
 function fillBuildingSelect() {
   [startBuildingSel, endBuildingSel].forEach(sel => {
     sel.innerHTML = '<option value="">건물 선택</option>';
@@ -451,10 +416,29 @@ function resetAll() {
   setStatus('초기화 완료');
 }
 
+/**
+ * 실시간 데이터 구독 (Edges & Node Status)
+ */
 function subscribeRealtime() {
+  // 1. 엣지 변경 시 그래프 재로드
   supabase.channel('edges-update')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'outdoor_edges' }, () => {
-      loadGraph().then(g => { state.graph = g; if(state.start.id && state.end.id) runRoute(); });
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'outdoor_edges' }, async () => {
+      state.graph = await loadGraph();
+      if(state.start.id && state.end.id) runRoute();
+    })
+    .subscribe();
+
+  // 2. 노드 혼잡도(Status) 변경 시 실시간 반영
+  supabase.channel('status-update')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'node_status' }, (payload) => {
+      const { node_id, node_scope, last_congestion_level } = payload.new;
+      const key = `${node_scope}_${node_id}`;
+      state.nodeStatus.set(key, last_congestion_level);
+      
+      // 현재 경로가 활성화되어 있다면 가이드 텍스트 갱신
+      if (state.routes.length > 0 && state.routes[state.activeRoute] && !state.routes[state.activeRoute].disabled) {
+        renderRoutes(); 
+      }
     })
     .subscribe();
 }
