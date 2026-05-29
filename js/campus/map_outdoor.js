@@ -111,6 +111,9 @@ function bindUI() {
  * 2. 마지막 노드는 무조건 '도착지'로 표시
  * 3. 중간 노드들은 '연결된 엣지가 8개 이상인 거점'이면서 '이름이 있는 경우'에만 표시
  */
+/**
+ * [개선 버전] 거점 중심 + 환승 지점(Transfer) 포함 경로 가이드 생성 함수
+ */
 function generateGuideText(path, nodeMap, nodeDegreeMap) {
   if (!path || path.length === 0) return '경로 정보가 없습니다.';
 
@@ -128,42 +131,61 @@ function generateGuideText(path, nodeMap, nodeDegreeMap) {
     const node = nodeMap.get(Number(targetId)) || nodeMap.get(targetId) || nodeMap.get(strId);
     if (!node) return null;
 
-    // --- [핵심 로직: 시작/끝/거점 구분] ---
+    // --- [핵심 로직: 시작/끝/거점/환승 구분] ---
     const isStart = (index === 0);
     const isEnd = (index === path.length - 1);
     
-    // 시작과 끝은 이름이 무엇이든 무조건 고유 명칭 부여
+    // 1. 시작과 끝은 무조건 표시
     if (isStart) return '출발지';
     if (isEnd) return '도착지';
 
-    // 중간 노드들은 거점(Degree >= 8)이면서 이름이 있는 경우만 반환
+    // 2. 환승 지점(Transfer) 판별 로직 추가
+    // 경로의 현재 노드(id)와 다음 노드(path[index+1]) 사이의 엣지가 'transfer' 타입인지 확인
+    let isTransferNode = false;
+    if (index < path.length - 1) {
+      const nextId = path[index + 1];
+      // edgeMap에서 현재 노드와 다음 노드 사이의 엣지를 찾음
+      // (주의: edgeMap은 graph_manager에서 구축된 것을 사용함)
+      const nextEdge = state.graph.edgeMap.get(strId + '-' + String(nextId)) || 
+                       state.graph.edgeMap.get(String(nextId) + '-' + strId);
+      
+      if (nextEdge && nextEdge.type === 'transfer') {
+        isTransferNode = true;
+      }
+    }
+
+    // 3. 거점(Degree >= 8) 판별
     const degree = (nodeDegreeMap && nodeDegreeMap.get(strId)) || 0;
     const isHub = degree >= 8;
     const name = node.name ? node.name.trim() : null;
 
-    if (isHub && name) {
-      return name;
+    // [판단 기준] 
+    // - 환승 지점이거나
+    // - 거점이거나
+    // - 이름이 있는 경우 (거점인 경우에만 이름이 있는 것만 표시하도록 기존 로직 유지 가능)
+    // 여기서는 '환승 지점' 혹은 '거점'인 경우에만 이름을 반환합니다.
+    if (isTransferNode || isHub) {
+      return name || '연결 지점'; // 이름이 없으면 '연결 지점'으로 표시
     }
 
-    return null; // 거점이 아니거나 이름이 없으면 제외
-  }).filter(name => name !== null); // null(필터링된 노드) 제거
+    return null; 
+  }).filter(name => name !== null);
 
   // 2. 결과가 없는 경우 예외 처리
   if (meaningfulNodes.length === 0) return '📍 경로를 계산 중입니다...';
   
-  // 3. 중복 제거 (연속된 노드가 같은 이름을 가질 경우 대비)
+  // 3. 중복 제거
   const uniqueNodes = meaningfulNodes.filter((name, idx) => name !== meaningfulNodes[idx - 1]);
 
   // 4. 최종 HTML 조립
-  // [출발지] → [거점A] → [거점B] → [도착지]
   let result = `<span class="guide-node">${uniqueNodes[0]}</span>`;
-  
   for (let i = 1; i < uniqueNodes.length; i++) {
     result += ` <span class="guide-arrow">→</span> <span class="guide-node">${uniqueNodes[i]}</span>`;
   }
 
   return result;
 }
+
 
 
 /**

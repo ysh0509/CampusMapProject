@@ -62,18 +62,27 @@ export function buildUnifiedGraph({
   // =========================
   // TRANSFER EDGES (기존과 동일)
   // =========================
-  transferEdges.forEach(t => {
-    const cost = t.cost ?? 0;
-    const inId = t.indoor_node_id;
-    const outId = t.outdoor_node_id;
+// graphBuilder.js의 transferEdges 처리 부분 수정
 
-    if (t.direction === 'bidirectional') {
-      addEdge(inId, outId, cost);
-      addEdge(outId, inId, cost);
-    }
-    if (t.direction === 'outdoor_to_indoor') addEdge(outId, inId, cost);
-    if (t.direction === 'indoor_to_outdoor') addEdge(inId, outId, cost);
-  });
+// =========================
+// TRANSFER EDGES (수정본)
+// =========================
+transferEdges.forEach(t => {
+  const cost = t.cost ?? 0;
+  // 반드시 접두어를 붙여서 graph_manager가 만든 노드 ID 체계와 일치시킵니다.
+  const inId = 'in_' + t.indoor_node_id; 
+  const outId = 'out_' + t.outdoor_node_id;
+
+  if (t.direction === 'bidirectional') {
+    addEdge(inId, outId, cost);
+    addEdge(outId, inId, cost);
+  } else if (t.direction === 'outdoor_to_indoor') {
+    addEdge(outId, inId, cost);
+  } else if (t.direction === 'indoor_to_outdoor') {
+    addEdge(inId, outId, cost);
+  }
+});
+
 
   return graph;
 }
