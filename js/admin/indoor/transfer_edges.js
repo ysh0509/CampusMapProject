@@ -366,95 +366,76 @@ function clearTransferIndoorNodes() {
 }
 
 /* =========================
-   RENDER INDOOR NODES
+   RENDER INDOOR NODES (List Mode)
 ========================= */
 
 function renderTransferIndoorNodes() {
-
+  // 1. 기존 렌더링 내용 및 마커 삭제
   clearTransferIndoorNodes();
 
+  // 2. 목록 스타일을 위한 컨테이너 초기화 (필요 시)
+  // floorWrapper 내부에 이미지 대신 목록을 보여주기 위해 내부를 비웁니다.
+  // 만약 이미지가 이미 로드된 상태라면 floorImageEl.style.display = 'none' 처리가 필요할 수 있습니다.
+  if (floorImageEl.src && floorImageEl.src !== '') {
+    floorImageEl.style.display = 'none'; // 목록 모드일 때는 이미지 숨김
+  }
+
+  // 3. 필터링 및 목록 생성
   transferIndoorNodes.forEach(node => {
+    // 공백만 있거나 빈 문자열인 노드명 필터링
+    const nodeName = (node.name || '').trim();
+    if (nodeName === '') {
+      return; // 이름이 없으면 건너뜀
+    }
 
-    const nodeEl =
-    document.createElement('div');
+    // 4. 목록 아이템(li 또는 div) 생성
+    const listItem = document.createElement('div');
+    listItem.className = 'indoor-node-list-item'; // CSS로 스타일링 가능
+    listItem.style.padding = '10px';
+    listItem.style.borderBottom = '1px solid var(--border-color)';
+    listItem.style.cursor = 'pointer';
+    listItem.style.fontSize = '0.9rem';
 
-    nodeEl.className =
-    'indoorNode';
-
-    // 픽셀 좌표
-    nodeEl.style.left =
-    `${node.x}px`;
-
-    nodeEl.style.top =
-    `${node.y}px`;
-
-    nodeEl.title =
-    node.name || `Node ${node.id}`;
-
-    const linked =
-    transferEdgeList.some(edge =>
-
-      edge.outdoor_node_id
-      === selectedTransferOutdoor?.id
-
-      &&
-
-      edge.indoor_node_id
-      === node.id
+    // 이미 연결된 상태인지 확인
+    const linked = transferEdgeList.some(edge =>
+      edge.outdoor_node_id === selectedTransferOutdoor?.id &&
+      edge.indoor_node_id === node.id
     );
 
-    // 이미 연결됨
+    // 5. 항목 내용 구성
     if (linked) {
-
-      nodeEl.style.opacity =
-      '0.4';
-
-      nodeEl.style.background =
-      '#9ca3af';
+      listItem.innerHTML = `<span style="color: #9ca3af;">${nodeName} (연결됨)</span>`;
+      listItem.style.opacity = '0.6';
+    } else {
+      listItem.innerHTML = `<span>${nodeName}</span>`;
+      
+      // 선택 상태 표시
+      if (selectedTransferIndoor && selectedTransferIndoor.id === node.id) {
+        listItem.style.backgroundColor = 'var(--accent-primary-light, #e0e7ff)';
+        listItem.style.fontWeight = 'bold';
+      }
     }
 
-    // 선택 상태 유지
-    if (
-      selectedTransferIndoor &&
-      selectedTransferIndoor.id
-      === node.id
-    ) {
-
-      nodeEl.classList.add('active');
-    }
-
-    nodeEl.onclick = () => {
-
+    // 6. 클릭 이벤트 (기존 로직 유지)
+    listItem.onclick = () => {
       if (linked) {
-
-        alert(
-        '이미 연결된 노드');
-
+        alert('이미 연결된 노드');
         return;
       }
 
-      selectedTransferIndoor =
-      node;
+      selectedTransferIndoor = node;
+      indoorSelectedBox.innerText = nodeName;
 
-      indoorSelectedBox.innerText =
-      node.name || node.id;
-
-      document
-      .querySelectorAll('.indoorNode')
-      .forEach(el => {
-
-        el.classList.remove(
-        'active');
-      });
-
-      nodeEl.classList.add(
-      'active');
+      // 선택 효과 업데이트를 위해 전체 목록 다시 렌더링 (UI 동기화)
+      renderTransferIndoorNodes();
     };
 
-    floorWrapperEl
-    .appendChild(nodeEl);
+    // 7. floorWrapper에 추가
+    floorWrapperEl.appendChild(listItem);
   });
 }
+
+
 
 /* =========================
    ROOM SEARCH

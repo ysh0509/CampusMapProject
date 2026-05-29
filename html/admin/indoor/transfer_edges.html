@@ -33,19 +33,42 @@
       position: relative;
       width: 100%;
       min-height: 300px;
+      max-height: 450px; /* 목록이 너무 길어지지 않도록 높이 제한 */
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      overflow: auto;
+      overflow-y: auto;
       background: #111;
       margin-top: 10px;
     }
-    #floorImage { display: block; max-width: none; }
-    .indoorNode {
-      position: absolute; width: 14px; height: 14px; border-radius: 50%;
-      background: var(--accent-primary); border: 2px solid white;
-      transform: translate(-50%, -50%); cursor: pointer; z-index: 100;
+    #floorImage { 
+      display: block; 
+      max-width: none; 
     }
-    .indoorNode.active { background: var(--accent-danger); }
+/* transfer_edges.html 내 <style> 태그 수정 */
+
+.indoor-node-list-item {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border-color); /* 기본 경계선 */
+  cursor: pointer;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+  /* 아래 속성을 추가하여 텍스트 선택 시 생기는 파란 하이라이트 방지 */
+  user-select: none; 
+}
+
+.indoor-node-list-item:hover {
+  background-color: var(--bg-input);
+}
+
+/* 선택된 상태의 스타일 수정 */
+.indoor-node-list-item.active {
+  background-color: var(--accent-primary) !important; /* 배경색 강제 적용 */
+  color: white !important;
+  font-weight: bold;
+  border-bottom: 1px solid var(--accent-primary); /* 경계선을 배경색과 동일하게 만들어 띠 현상 제거 */
+}
+
     .section-title { font-size: 0.9rem; color: var(--accent-primary); text-transform: uppercase; margin-bottom: 10px; display: block; }
   </style>
 </head>
@@ -77,9 +100,12 @@
         <input type="text" id="roomSearch" placeholder="강의실 번호 검색" />
       </div>
 
-      <span class="section-title">Floor Plan</span>
+      <span class="section-title">Node List</span>
       <div id="floorWrapper">
-        <img id="floorImage"/>
+        <!-- 이미지가 있을 경우 표시될 이미지 -->
+        <img id="floorImage" style="display: none;"/>
+        <!-- 노드 목록이 렌더링될 컨테이너 (JS에서 이 안에 item들을 append함) -->
+        <div id="nodeListContainer"></div>
       </div>
 
       <button id="createBtn" class="btn-primary" style="width: 100%; margin-top: 20px;">연결 생성</button>
