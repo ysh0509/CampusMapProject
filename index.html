@@ -33,48 +33,69 @@
         <!-- Problem & Solution Section -->
         <section class="problem-solution container">
             <div class="ps-grid">
-                <div class            class="ps-card problem">
+                <div class="ps-card problem">
                     <h2>The Challenge</h2>
                     <ul>
-                        <li><i class="fas fa-times-circle"></i> 실시간 혼잡도를 알 수 없는 불투명한 공간 관리</li>
-                        <li><i class="fas fa-times-circle"></i> 건물 내 복잡한 구조로 인한 길찾기의 어려움</li>
-                        <li><i class="fas fa-times-circle"></i> 데이터와 현장 피드백 간의 단절</li>
+                        <li><i class="fas fa-times-circle"></i> <b>정보 불균형:</b> 신입생 및 방문자의 캠퍼스 내 복잡한 구조로 인한 길찾기 어려움</li>
+                        <li><i class="fas fa-times-circle"></i> <b>관리 사각지대:</b> 실시간 혼잡도를 파악하기 어려운 불투명한 공간 관리 체계</li>
+                        <li><i class="fas fa-times-circle"></i> <b>연결성 한계:</b> 네트워크 장애 시 정보 단절 및 현장 데이터 피드백 부재</li>
                     </ul>
                 </div>
                 <div class="ps-card solution">
                     <h2>Our Solution</h2>
                     <ul>
-                        <li><i class="fas fa-check-circle"></i> <b>Computer Vision:</b> 실시간 인원 및 점유율 분석</li>
-                        <li><i class="fas fa-check-circle"></i> <b>Unified Graph:</b> 실내외 끊김 없는 통합 내비게이션</li>
-                        <li><i class="fas fa-check-circle"></i> <b>Edge-to-Cloud:</b> 실시간 데이터 동기화 및 현장 제어</li>
+                        <li><i class="fas fa-check-circle"></i> <b>지능형 내비게이션:</b> 건물 내외부(Node-to-Node)를 아우르는 Seamless 경로 안내</li>
+                        <li><i class="fas fa-check-circle"></i> <b>혼잡도 기반 최적화:</b> 실시간 공간 점유 데이터를 반영한 동적 경로 재설정</li>
+                        <li><i class="fas fa-check-circle"></i> <b>Edge-Resilience:</b> 통신 장애 시에도 현장 디바이스(LED/LCD)를 통한 정보 제공</li>
                     </ul>
                 </div>
             </div>
         </section>
 
-        <!-- Deep Tech Section -->
+        <!-- Deep Tech Section (6 Cards Expansion) -->
         <section class="features container" id="features-section">
             <h2 class="section-title">Core Technology</h2>
             <div class="feature-grid">
+                <!-- 1. Vision Intelligence -->
                 <div class="feature-card">
                     <span class="feature-icon">👁️</span>
                     <h3>Vision Intelligence</h3>
-                    <p>YOLOv8 모델을 활용하여 카메라 ROI(관심 영역) 내의 객체를 실시간 검출하고, 공간 점유율을 정밀하게 수치화합니다.</p>
+                    <p>YOLOv8 기반 실시간 객체 검출을 통해 공간 점유율을 정밀 분석하며, 기존 CCTV 인프라와 즉시 연동 가능한 확장성을 갖췄습니다.</p>
                 </div>
+
+                <!-- 2. Multi-Criteria Pathfinding -->
                 <div class="feature-card">
                     <span class="feature-icon">🧠</span>
                     <h3>Advanced Pathfinding</h3>
-                    <p>A* 알고리즘을 기반으로 거리, 경사도, 계단 유무, 실시간 혼잡도를 가중치로 계산하여 최적의 경로를 산출합니다.</p>
+                    <p>A* 알고리즘에 경사도, 계단, 엘리베이터, 에스컬레이터 등 엣지 타입별 가중치를 적용하여 맞춤형 최적 경로를 산출합니다.</p>
                 </div>
+
+                <!-- 3. Hybrid Navigation -->
                 <div class="feature-card">
                     <span class="feature-icon">🌐</span>
-                    <h3>Unified Spatial Graph</h3>
-                    <p>실외 GPS 좌표와 실내 픽셀 좌표를 하나의 통합 그래프로 연결하여 실내외를 아우르는 Seamless한 이동 경험을 제공합니다.</p>
+                    <h3>Hybrid Navigation</h3>
+                    <p>실외 GPS와 실내 픽셀 좌표를 통합하여 건물 내외부를 끊김 없이 연결하며, 외부/내부 노드 간 자유로운 탐색을 지원합니다.</p>
                 </div>
+
+                <!-- 4. Edge-to-Cloud Sync -->
                 <div class="feature-card">
                     <span class="feature-icon">📡</span>
-                    <h3>Real-time Sync</h3>
-                    <p>Supabase Realtime 엔진을 통해 분석된 공간 데이터가 관리자 대시보드와 현장 임베디드 디바이스에 즉시 반영됩니다.</p>
+                    <h3>Edge-to-Cloud Sync</h3>
+                    <p>아두이노 기반 하드웨어가 실시간 데이터를 수집하며, 냉각 시스템을 통해 현장 환경에 대응하고 실시간 관제를 수행합니다.</p>
+                </div>
+
+                <!-- 5. Real-time Monitoring -->
+                <div class="feature-card">
+                    <span class="feature-icon">📊</span>
+                    <h3>Real-time Monitoring</h3>
+                    <p>분석된 모든 공간 데이터는 Supabase Realtime 엔진을 통해 관리자 대시보드 및 현장 디바이스에 즉시 동기화됩니다.</p>
+                </div>
+
+                <!-- 6. Resilience System -->
+                <div class="feature-card">
+                    <span class="feature-icon">🛡️</span>
+                    <h3>Resilience System</h3>
+                    <p>네트워크 단절 상황에서도 현장 임베디드 기기의 LED 및 LCD 화면을 통해 중단 없는 위치 및 경로 정보를 제공합니다.</p>
                 </div>
             </div>
         </section>
@@ -82,11 +103,8 @@
 
     <footer>
         <div class="container">
-            <p>&copy; 
-                AI 기반 실시간 캠퍼스 공간 혼잡도 분석 및 스마트 관제 시스템
-                Developed by SeongHyun Yoon
-                2026. All rights reserved.
-            </p>
+            <p>&copy; AI 기반 실시간 캠퍼스 공간 혼잡도 분석 및 스마트 관제 시스템<br>
+            Developed by SeongHyun Yoon | 2026. All rights reserved.</p>
         </div>
     </footer>
 
