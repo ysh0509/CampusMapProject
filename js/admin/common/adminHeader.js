@@ -44,14 +44,11 @@ export function initAdminHeader(active = '') {
     display: flex;
     align-items: center;
     gap: 8px;
-    cursor: pointer; /* 클릭 가능함을 표시 */
+    cursor: pointer;
     transition: opacity 0.2s;
   }
 
-  .logo:hover {
-    opacity: 0.8;
-  }
-
+  .logo:hover { opacity: 0.8; }
   .logo i { color: var(--admin-accent); }
 
   .nav {
@@ -103,13 +100,6 @@ export function initAdminHeader(active = '') {
     color: white;
   }
 
-  /* 레이아웃 보정 */
-  #admin-content {
-    position: relative;
-    z-index: 1;
-  }
-
-  /* 모바일/태블릿 대응 */
   @media (max-width: 1024px) {
     .admin-header { height: auto; padding: 12px 20px; flex-direction: column; gap: 16px; }
     .admin-left { flex-direction: column; gap: 12px; width: 100%; }
@@ -134,6 +124,7 @@ export function initAdminHeader(active = '') {
         <button data-page="occupancy"><i class="fas fa-users"></i> Occupancy</button>
         <button data-page="gate"><i class="fas fa-exchange-alt"></i> Transfer</button>
         <button data-page="vision2NE"><i class="fas fa-link"></i> Camera Map</button>
+        <button data-page="firmware"><i class="fas fa-microchip"></i> Firmware</button> 
       </div>
     </div>
     <div class="logout-group">
@@ -150,7 +141,7 @@ export function initAdminHeader(active = '') {
 
   const base = '/html/admin';
   const routes = {
-    main: '/index.html', // 메인 페이지 경로 추가
+    main: '/index.html',
     dashboard: `${base}/admin_dashboard.html`,
     vision: `${base}/admin_vision_control.html`,
     outdoor: `${base}/outdoor/admin_outdoor_map.html`,
@@ -158,7 +149,8 @@ export function initAdminHeader(active = '') {
     elevation: `${base}/outdoor/admin_elevation_editor.html`,
     vision2NE: `${base}/admin_camera_map.html`,
     occupancy: `${base}/admin_occupancy.html`,
-    gate: `${base}/indoor/transfer_edges.html`
+    gate: `${base}/indoor/transfer_edges.html`,
+    firmware: `${base}/admin_firmwareupdate.html` // [추가] 펌웨어 업데이트 경로
   };
 
   // 로고 클릭 시 메인 페이지로 이동

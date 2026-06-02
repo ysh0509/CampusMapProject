@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<script>
+  window.__ENV = {
+    SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+  };
+</script>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <title>펌웨어 업데이트 | 스마트 캠퍼스</title>
+  <style>
+    /* [Design System] admin_theme.css 기반 유지 */
+    :root {
+      --bg-main: #0f172a;           /* Deep Navy */
+      --bg-card: rgba(30, 41, 59, 0.7); /* Glassmorphism Card */
+      --bg-input: rgba(15, 23, 42, 0.8);
+      
+      --text-primary: #f8fafc;      /* Off-white */
+      --text-secondary: #94a3b8;    /* Slate */
+      
+      --accent-primary: #3b82f6;    /* Blue */
+      --accent-success: #10b981;    /* Green */
+      --accent-warning: #f59e0b;    /* Amber */
+      --accent-danger: #ef4444;     /* Red */
+      
+      --border-color: rgba(255, 255, 255, 0.1);
+      --glass-blur: blur(12px);
+      
+      --radius-lg: 20px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    body { 
+      margin: 0; 
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; 
+      background: var(--bg-main); 
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .container { 
+      padding: 32px; 
+      max-width: 1600px; 
+      margin: 0 auto; 
+    }
+
+    h2 { 
+      font-size: 1.75rem; 
+      font-weight: 700; 
+      margin-bottom: 24px; 
+      display: flex; 
+      align-items: center; 
+      gap: 10px;
+      color: var(--text-primary);
+    }
+
+    /* [Layout] 좌우 배치를 위한 Grid 시스템 */
+    .ota-main-grid {
+      display: grid;
+      grid-template-columns: 400px 1fr; /* 왼쪽 업로드 폼은 고정 너비, 오른쪽 히스토리는 확장 */
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* [Card Style] */
+    .card { 
+      background: var(--bg-card); 
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px; 
+      box-shadow: var(--shadow);
+    }
+
+    .card h3 { 
+      font-size: 1.1rem; 
+      color: var(--text-primary); 
+      margin: 0 0 20px 0; 
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* [Form Elements] */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { 
+      display: block; 
+      margin-bottom: 6px; 
+      color: var(--text-secondary); 
+      font-size: 0.85rem; 
+    }
+
+    input[type="text"], 
+    input[type="file"], 
+    textarea {
+      width: 100%;
+      padding: 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      box-sizing: border-box;
+      outline: none;
+    }
+
+    input[type="file"] { padding: 8px; cursor: pointer; }
+
+    .btn-row { 
+      display: flex; 
+      gap: 10px; 
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 12px 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background: var(--bg-input);
+      color: var(--text-primary);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button:hover { 
+      background: var(--accent-primary); 
+      color: white; 
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      border: none;
+      flex: 2;
+    }
+
+    .btn-secondary {
+      flex: 1;
+    }
+
+    /* [Table Style] */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      padding: 12px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 16px 12px;
+      font-size: 0.9rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Status Badges */
+    .badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge-active { background: rgba(16, 185, 129, 0.2); color: var(--accent-success); }
+    .badge-old { background: rgba(148, 163, 184, 0.2); color: var(--text-secondary); }
+
+    /* Loading Overlay */
+    #loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid var(--border-color);
+      border-top: 4px solid var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .ota-main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="admin-header"></div>
+
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <p style="margin-top: 15px;">처리 중...</p>
+  </div>
+
+  <div class="container">
+    <h2><i class="fas fa-microchip"></i> ESP32-S3 펌웨어 업데이트 관리</h2>
+
+    <div class="ota-main-grid">
+      <!-- 왼쪽: 업로드 카드 -->
+      <div class="card">
+        <h3><i class="fas fa-cloud-upload-alt"></i> 새 펌웨어 배포</h3>
+        <form id="ota-form">
+          <div class="form-group">
+            <label>펌웨어 파일 (.bin)</label>
+            <input type="file" id="firmware-file" accept=".bin" required>
+          </div>
+          <div class="form-group">
+            <label>버전 정보</label>
+            <input type="text" id="version-input" placeholder="예: v1.2.0" required>
+          </div>
+          <div class="form-group">
+            <label>업데이트 내용</label>
+            <textarea id="desc-input" placeholder="변경 사항을 입력하세요..."></textarea>
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn-primary">배포 시작</button>
+            <button type="button" class="btn-secondary" onclick="location.reload()">
+              <i class="fas fa-redo"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 오른쪽: 히스토리 카드 -->
+      <div class="card">
+        <h3><i class="fas fa-history"></i> 배포 이력</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>버전</th>
+                <th>내용</th>
+                <th>배포 일시</th>
+                <th>상태</th>
+              </tr>
+            </thead>
+            <tbody id="history-list">
+              <!-- JS에서 데이터 삽입 -->
+              <tr>
+                <td colspan="4" style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                  데이터를 불러오는 중...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/admin/admin_firmwareupdate.js"></script>
+</body>
+</html>
