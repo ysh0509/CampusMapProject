@@ -11,10 +11,11 @@ initAdminHeader('vision');
 
 const $ = (id) => document.getElementById(id);
 
-// DOM 요소 맵핑
+// DOM 요소 맵핑 (HTML의 ID와 1:1 매칭)
 const el = {
   cameraId: $('camera_id'),
   cameraName: $('camera_name'),
+  hardwareId: $('hardware_id'),      // [추가]
   videoSource: $('video_source'),
   nodeScope: $('node_scope'),
   isActive: $('is_active'),
@@ -29,6 +30,15 @@ const el = {
   btnDelete: $('btn_delete'),
   btnSetActive: $('btn_set_active'),
   btnPreview: $('btn_preview'),
+  // [추가] 모드 관련 요소
+  controlMode: $('control_mode'),
+  modeSettingsArea: $('mode_settings_area'),
+  manualSettings: $('manual_settings'),
+  lockedMessage: $('locked_message'),
+  autoMessage: $('auto_message'),
+  manualAngle: $('manual_angle'),
+  manualBuzzer: $('manual_buzzer'),
+  // USB 버튼
   btnUsb0: $('btn_usb_0'),
   btnUsb1: $('btn_usb_1'),
   btnUsb2: $('btn_usb_2')
@@ -74,18 +84,46 @@ function validateRoiJsonText(text) {
 }
 
 /* =========================================================
+   DYNAMIC UI LOGIC (모드 변경 시 UI 전환)
+   ========================================================= */
+function updateModeUI() {
+  const mode = el.controlMode.value;
+
+  // 모든 모드 UI 초기화
+  el.manualSettings.style.display = 'none';
+  el.lockedMessage.style.display = 'none';
+  el.autoMessage.style.display = 'none';
+
+  // 선택된 모드에 맞는 UI만 활성화
+  if (mode === 'MANUAL') {
+    el.manualSettings.style.display = 'block';
+  } else if (mode === 'LOCKED') {
+    el.lockedMessage.style.display = 'block';
+  } else if (mode === 'AUTO') {
+    el.autoMessage.style.display = 'block';
+  }
+}
+
+/* =========================================================
    FORM CONTROL
    ========================================================= */
 function clearForm() {
   selectedId = null;
   el.cameraId.value = '';
   el.cameraName.value = '';
+  el.hardwareId.value = ''; 
   el.videoSource.value = '0';
   el.nodeScope.value = 'indoor';
   el.isActive.checked = false;
+  el.controlMode.value = 'AUTO'; 
   el.roiJson.value = JSON.stringify(defaultRoi, null, 2);
+  el.manualAngle.value = 0;     
+  el.manualBuzzer.checked = false; 
+  
   if (el.previewUrl) el.previewUrl.value = '';
   if (el.previewImg) el.previewImg.src = '';
+  
+  updateModeUI(); 
   setMsg('입력 폼이 초기화되었습니다.');
 }
 
@@ -93,15 +131,24 @@ function fillForm(p) {
   selectedId = p.camera_id;
   el.cameraId.value = p.camera_id ?? '';
   el.cameraName.value = p.name ?? '';
+  el.hardwareId.value = p.hardware_id ?? ''; 
   el.videoSource.value = String(p.video_source ?? '');
   el.nodeScope.value = p.node_scope ?? 'indoor';
   el.isActive.checked = !!p.is_active;
   el.roiJson.value = JSON.stringify(p.roi_json ?? defaultRoi, null, 2);
+  
+  // [중요] Join된 vision_control 데이터 매핑
+  el.controlMode.value = p.control_mode || 'AUTO';
+  el.manualAngle.value = p.target_angle || 0;
+  el.manualBuzzer.checked = !!p.manual_buzzer;
+
   if (el.previewUrl) el.previewUrl.value = String(p.video_source ?? '');
   if (el.previewImg) {
     const v = String(p.video_source ?? '');
     el.previewImg.src = /^\d+$/.test(v) ? '' : v;
   }
+
+  updateModeUI();
 }
 
 function renderList() {
@@ -132,16 +179,32 @@ function renderList() {
    DATABASE OPERATIONS (SUPABASE)
    ========================================================= */
 async function loadProfiles() {
+  // camera_profiles와 vision_control을 Join하여 가져옴
   const { data, error } = await supabase
     .from('camera_profiles')
-    .select('*')
+    .select(`
+      *,
+      vision_control (
+        mode,
+        target_angle,
+        manual_buzzer
+      )
+    `)
     .order('updated_at', { ascending: false });
 
   if (error) {
     setMsg(`로드 실패: ${error.message}`, false);
     return;
   }
-  profiles = data || [];
+
+  // Join된 데이터를 flat하게 변환하여 UI 매핑을 용이하게 함
+  profiles = (data || []).map(p => ({
+    ...p,
+    control_mode: p.vision_control?.mode || 'AUTO',
+    target_angle: p.vision_control?.target_angle || 0,
+    manual_buzzer: p.vision_control?.manual_buzzer || false
+  }));
+
   renderList();
 }
 
@@ -151,6 +214,10 @@ async function saveProfile() {
   const video_source = el.videoSource.value.trim();
   const node_scope = el.nodeScope.value;
   const is_active = el.isActive.checked;
+  const hardware_id = el.hardwareId.value.trim();
+  const control_mode = el.controlMode.value;
+  const target_angle = parseInt(el.manualAngle.value) || 0;
+  const manual_buzzer = el.manualBuzzer.checked;
   const roiText = el.roiJson.value.trim();
 
   if (!camera_id) return setMsg('camera_id 필수', false);
@@ -158,23 +225,42 @@ async function saveProfile() {
 
   const v = validateRoiJsonText(roiText);
   if (!v.ok) return setMsg(v.msg, false);
-
   const roi_json = JSON.parse(roiText);
 
-  // 단일 활성 원칙: 새 카메라를 켜는 경우, 기존의 다른 카메라들은 모두 끈다.
+  // 1. camera_profiles 테이블 업데이트 (기본 정보 및 hardware_id)
   if (is_active) {
     await supabase.from('camera_profiles').update({ is_active: false }).neq('camera_id', camera_id);
   }
 
-  const payload = {
-    camera_id, name, video_source, node_scope, roi_json, is_active,
+  const profilePayload = {
+    camera_id, name, video_source, node_scope, roi_json, is_active, hardware_id,
     updated_at: new Date().toISOString()
   };
 
-  const { error } = await supabase.from('camera_profiles').upsert(payload);
-  if (error) return setMsg(`저장 실패: ${error.message}`, false);
+  const { error: profileError } = await supabase.from('camera_profiles').upsert(profilePayload);
+  if (profileError) return setMsg(`프로필 저장 실패: ${profileError.message}`, false);
 
-  setMsg('설정이 저장되었습니다.');
+  // 2. vision_control 테이블 업데이트 (모드 및 각도 제어 데이터)
+  const visionPayload = {
+    camera_id: camera_id, 
+    mode: control_mode,
+    target_angle: control_mode === 'MANUAL' ? target_angle : 0,
+    is_locked: control_mode === 'LOCKED',
+    manual_buzzer: manual_buzzer,
+    updated_at: new Date().toISOString()
+  };
+
+  const { error: visionError } = await supabase.from('vision_control').upsert(visionPayload, {
+    onConflict: 'camera_id' 
+  });
+
+  if (visionError) {
+    console.error("Vision control error:", visionError);
+    setMsg('프로필은 저장되었으나 제어 설정 저장에 실패했습니다.', false);
+  } else {
+    setMsg('모든 설정이 성공적으로 저장되었습니다.');
+  }
+
   await loadProfiles();
   const p = profiles.find(x => x.camera_id === camera_id);
   if (p) fillForm(p);
@@ -193,21 +279,15 @@ async function deleteProfile() {
   clearForm();
 }
 
-/**
- * [핵심] 활성 상태 즉시 전환 함수
- * 체크박스를 조작하면 Supabase DB의 is_active 값이 업데이트됩니다.
- * 이 업데이트를 로컬 PC의 command_listener.py가 Realtime으로 감지하여 엔진을 켭니다/끕니다.
- */
 async function handleActiveStatusChange() {
   const id = el.cameraId.value.trim();
   if (!id) return setMsg('camera_id가 필요합니다.', false);
 
   const targetIsActive = el.isActive.checked;
 
-  // 1. 다른 모든 카메라 비활성화 (단일 활성 보장)
+  // 단일 활성 보장 (다른 모든 카메라 비활성화)
   await supabase.from('camera_profiles').update({ is_active: false });
 
-  // 2. 현재 선택된 카메라 상태 업데이트
   const { error } = await supabase.from('camera_profiles').update({
     is_active: targetIsActive,
     updated_at: new Date().toISOString()
@@ -215,7 +295,7 @@ async function handleActiveStatusChange() {
 
   if (error) {
     setMsg(`상태 변경 실패: ${error.message}`, false);
-    el.isActive.checked = !targetIsActive; // 실패 시 UI 롤백
+    el.isActive.checked = !targetIsActive; 
   } else {
     setMsg(`${targetIsActive ? '활성화' : '비활성화'} 명령 전달됨`);
     await loadProfiles();
@@ -266,7 +346,12 @@ function bindEvents() {
   if (el.btnPreview) el.btnPreview.onclick = applyPreview;
   if (el.btnSetActive) el.btnSetActive.onclick = setActiveProfile;
 
-  // [핵심] 체크박스 변경 시 즉시 DB 반영 (이것이 무선 명령의 트리거가 됨)
+  // 모드 변경 시 UI 즉시 전환
+  if (el.controlMode) {
+    el.controlMode.onchange = updateModeUI;
+  }
+
+  // 체크박스 변경 시 즉시 DB 반영
   if (el.isActive) {
     el.isActive.onchange = handleActiveStatusChange;
   }

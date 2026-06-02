@@ -14,22 +14,17 @@
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
   <style>
     :root {
-      /* admin_theme.css 기반 Dark Enterprise Theme */
-      --bg-main: #0f172a;           /* Deep Navy */
-      --bg-card: rgba(30, 41, 59, 0.7); /* Glassmorphism Card */
+      --bg-main: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
       --bg-input: rgba(15, 23, 42, 0.8);
-      
-      --text-primary: #f8fafc;      /* Off-white */
-      --text-secondary: #94a3b8;    /* Slate */
-      
-      --accent-primary: #3b82f6;    /* Blue */
-      --accent-success: #10b981;    /* Green */
-      --accent-warning: #f59e0b;    /* Amber */
-      --accent-danger: #ef4444;     /* Red */
-      
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-primary: #3b82f6;
+      --accent-success: #10b981;
+      --accent-warning: #f59e0b;
+      --accent-danger: #ef4444;
       --border-color: rgba(255, 255, 255, 0.1);
       --glass-blur: blur(12px);
-      
       --radius-lg: 20px;
       --radius-md: 12px;
       --radius-sm: 8px;
@@ -48,13 +43,12 @@
     .container { 
       padding: 24px; 
       display: grid; 
-      grid-template-columns: 400px 1fr; 
+      grid-template-columns: 400px 1fr; /* 좌측 400px, 우측 나머지 */
       gap: 24px; 
       max-width: 1440px; 
       margin: 0 auto; 
     }
 
-    /* Panel - Glassmorphism 적용 */
     .panel { 
       background: var(--bg-card); 
       backdrop-filter: var(--glass-blur);
@@ -71,10 +65,8 @@
       display: flex; 
       align-items: center; 
       gap: 10px;
-      color: var(--text-primary);
     }
     
-    /* Form Section */
     .form-section { margin-bottom: 24px; }
     .section-label { 
       font-size: 0.75rem; 
@@ -83,89 +75,47 @@
       text-transform: uppercase; 
       margin-bottom: 10px; 
       display: block;
-      letter-spacing: 0.05em;
     }
 
     .row { display: flex; gap: 12px; margin-bottom: 16px; }
     .row > * { flex: 1; }
     
-    /* Input Styling - Dark Theme */
     input, select, textarea {
       width: 100%; 
       border: 1px solid var(--border-color); 
       border-radius: var(--radius-sm);
       padding: 10px 14px; 
       font-size: 14px; 
-      outline: none; 
-      transition: all 0.2s;
       background: var(--bg-input);
       color: var(--text-primary);
+      outline: none;
     }
-    input:focus, select:focus, textarea:focus { 
-      border-color: var(--accent-primary); 
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    }
-    textarea { min-height: 180px; font-family: 'Fira Code', monospace; }
 
-    /* Buttons - Theme Colors */
     button { 
       border: none; 
       border-radius: var(--radius-sm); 
       padding: 10px 16px; 
       cursor: pointer; 
       font-weight: 600; 
-      font-size: 14px; 
       transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
     }
-    button:active { transform: scale(0.96); }
     
     .btn-save { background: var(--accent-primary); color: white; width: 100%; margin-top: 12px; }
-    .btn-save:hover { background: #2563eb; transform: translateY(-1px); }
-    
     .btn-delete { background: rgba(239, 68, 68, 0.15); color: var(--accent-danger); border: 1px solid var(--accent-danger); }
-    .btn-delete:hover { background: var(--accent-danger); color: white; }
-    
-    .btn-validate { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-color); }
-    .btn-validate:hover { background: rgba(255, 255, 255, 0.1); }
-    
     .btn-new { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-color); }
-    
-    .btn-success-outline { 
-      background: rgba(16, 185, 129, 0.15); 
-      color: var(--accent-success); 
-      border: 1px solid var(--accent-success);
-    }
-    .btn-success-outline:hover { background: var(--accent-success); color: white; }
+    .btn-validate { background: rgba(255, 255, 255, 0.05); color: var(--text-primary); border: 1px solid var(--border-color); }
+    .btn-success-outline { background: rgba(16, 185, 129, 0.15); color: var(--accent-success); border: 1px solid var(--accent-success); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.1); color: white; }
 
-    /* USB Group */
-    .usb-group { 
-      display: flex; 
-      background: var(--bg-input); 
-      padding: 4px; 
-      border-radius: var(--radius-sm); 
-      gap: 4px; 
-    }
-    .usb-group button { 
-      flex: 1; 
-      background: transparent; 
-      color: var(--text-secondary); 
-      padding: 6px; 
-      font-size: 12px;
-    }
-    .usb-group button.active { 
-      background: var(--accent-primary); 
-      color: white; 
-    }
+    .usb-group { display: flex; background: var(--bg-input); padding: 4px; border-radius: var(--radius-sm); gap: 4px; }
+    .usb-group button { flex: 1; background: transparent; color: var(--text-secondary); font-size: 12px; }
+    .usb-group button.active { background: var(--accent-primary); color: white; }
 
-    /* List Container */
     .list-container { 
-      max-height: 280px; 
+      max-height: 300px; 
       overflow-y: auto; 
       border-radius: var(--radius-md); 
-      margin-bottom: 20px; 
+      margin-bottom: 24px; 
       background: rgba(0, 0, 0, 0.2);
     }
     .list-item { 
@@ -175,28 +125,20 @@
       display: flex; 
       align-items: center; 
       gap: 12px; 
-      transition: background 0.2s;
-      color: var(--text-primary);
     }
-    .list-item:hover { background: rgba(255, 255, 255, 0.05); }
-    .list-item.active { 
-      background: rgba(59, 130, 246, 0.15); 
-      border-left: 4px solid var(--accent-primary); 
-    }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .list-item.active { background: rgba(59, 130, 246, 0.15); border-left: 4px solid var(--accent-primary); }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; }
     .dot-on { background: var(--accent-success); box-shadow: 0 0 8px var(--accent-success); }
     .dot-off { background: #475569; }
     .item-id { font-weight: 700; font-size: 14px; display: block; }
     .item-sub { font-size: 12px; color: var(--text-secondary); }
 
-    /* Video Preview */
     .video-wrap { 
       background: #000; 
       border-radius: var(--radius-md); 
       overflow: hidden; 
       position: relative; 
       aspect-ratio: 16/9; 
-      box-shadow: var(--shadow);
     }
     .video-img { width: 100%; height: 100%; object-fit: contain; }
     .video-overlay { 
@@ -205,11 +147,22 @@
       color: white; padding: 5px 12px; 
       border-radius: 20px; font-size: 12px; 
       backdrop-filter: blur(4px);
-      border: 1px solid rgba(255,255,255,0.1);
     }
 
-    /* Message Box */
-    #roi_msg { font-size: 13px; margin-top: 8px; font-weight: 500; }
+    /* 모드 설정 영역 */
+    .mode-settings-container {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: var(--radius-md);
+      border: 1px dashed var(--border-color);
+      margin-top: 10px;
+    }
+    .mode-info { font-size: 0.85rem; margin-top: 8px; padding: 8px; border-radius: var(--radius-sm); }
+    .mode-info.auto { color: var(--accent-success); background: rgba(16, 185, 129, 0.1); }
+    .mode-info.locked { color: var(--accent-danger); background: rgba(239, 68, 68, 0.1); }
+    .checkbox-group { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+    #roi_msg { font-size: 13px; margin-top: 8px; }
     .ok { color: var(--accent-success); }
     .err { color: var(--accent-danger); }
 
@@ -221,67 +174,107 @@
   <div id="admin-header"></div>
 
   <div class="container">
-    <!-- Left Column: Configuration -->
+    <!-- Left Column: Configuration (Setting) -->
     <div class="panel">
-      <h3>⚙️ 카메라 설정</h3>
+      <h3><i class="fas fa-cog"></i> 카메라 설정</h3>
       
       <div class="form-section">
-        <span class="section-label">기본 정보</span>
+        <span class="section-label">기본 정보 및 하드웨어</span>
         <div class="row">
           <input id="camera_id" placeholder="Camera ID" />
           <input id="camera_name" placeholder="카메라 이름" />
+        </div>
+        <div class="form-group">
+          <label style="font-size: 13px; color: var(--text-secondary);">Hardware ID (ESP32 고유번호)</label>
+          <input id="hardware_id" placeholder="예: HD_NODE_01" />
         </div>
         <div class="row">
           <select id="node_scope">
             <option value="indoor">Indoor (실내)</option>
             <option value="outdoor">Outdoor (실외)</option>
           </select>
-          <label style="display:flex;align-items:center;gap:8px; font-size:14px; cursor:pointer; margin:0;">
+          <label class="checkbox-group" style="font-size:14px; margin:0;">
             <input type="checkbox" id="is_active" style="width:auto;" /> 활성 상태
           </label>
         </div>
       </div>
 
       <div class="form-section">
-        <span class="section-label">영상 소스</span>
-        <div class="row">
+        <span class="section-label">Vision Control Mode</span>
+        <div class="form-group">
+          <select id="control_mode">
+            <option value="AUTO">AUTO (자동 추종)</option>
+            <option value="MANUAL">MANUAL (수동 제어)</option>
+            <option value="LOCKED">LOCKED (동작 정지)</option>
+          </select>
+        </div>
+
+        <div id="mode_settings_area" class="mode-settings-container">
+          <!-- MANUAL 모드 UI -->
+          <div id="manual_settings" style="display: none;">
+            <div class="form-group">
+              <label style="font-size: 12px;">Target Angle (°)</label>
+              <input type="number" id="manual_angle" min="0" max="180" value="0" />
+            </div>
+            <div class="form-group checkbox-group" style="font-size: 13px;">
+              <input type="checkbox" id="manual_buzzer" style="width:auto;" />
+              <label for="manual_buzzer">Enable Manual Buzzer</label>
+            </div>
+          </div>
+          <!-- LOCKED 모드 안내 -->
+          <div id="locked_message" style="display: none;">
+            <p class="mode-info locked"><i class="fas fa-exclamation-triangle"></i> 동작 정지 모드입니다.</p>
+          </div>
+          <!-- AUTO 모드 안내 -->
+          <div id="auto_message" style="display: block;">
+            <p class="mode-info auto"><i class="fas fa-robot"></i> AI 자동 제어 모드</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <span class="section-label">영상 및 ROI 설정</span>
+        <div class="form-group">
           <input id="video_source" placeholder="Source (0, 1, URL...)" />
-          <button id="btn_preview" class="btn-validate" type="button">미리보기</button>
+        </div>
+        <div class="row">
+          <input id="preview_url" placeholder="미리보기 URL" />
+          <button id="btn_preview" class="btn-secondary" type="button">적용</button>
         </div>
         <div class="usb-group">
           <button id="btn_usb_0" class="btn-validate" type="button">USB 0</button>
           <button id="btn_usb_1" class="btn-validate" type="button">USB 1</button>
           <button id="btn_usb_2" class="btn-validate" type="button">USB 2</button>
         </div>
+        <div class="form-group" style="margin-top:15px;">
+          <textarea id="roi_json"></textarea>
+          <div id="roi_msg">ready</div>
+          <button id="btn_validate" class="btn-validate" style="width:100%; margin-top:8px;" type="button">ROI 검증</button>
+        </div>
       </div>
 
-      <div class="form-section">
-        <span class="section-label">ROI 영역 (JSON)</span>
-        <textarea id="roi_json"></textarea>
-        <div id="roi_msg">ready</div>
-      </div>
-
-      <div class="btn-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+      <div class="action-buttons" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
         <button id="btn_new" class="btn-new" type="button">새로 만들기</button>
         <button id="btn_validate" class="btn-validate" type="button">ROI 검증</button>
         <button id="btn_save" class="btn-save" style="grid-column: span 2;" type="button">설정 저장하기</button>
         <button id="btn_delete" class="btn-delete" style="grid-column: span 2;" type="button">이 프로필 삭제</button>
+        <button id="btn_set_active" class="btn-success-outline" style="grid-column: span 2;" type="button">✨ 현재 프로필 즉시 활성화</button>
+
       </div>
     </div>
 
-    <!-- Right Column: List & Monitor -->
+    <!-- Right Column: List & Monitor (Vertical Layout) -->
     <div class="panel">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h3 style="margin:0;">📋 프로필 목록 & 모니터링</h3>
-        <button id="btn_set_active" class="btn-success-outline" type="button">✨ 현재 프로필 즉시 활성화</button>
-      </div>
 
+      <!-- 1. 프로필 목록 (Top) -->
+      <h3 style="margin-bottom: 15px;"><i class="fas fa-list"></i> 프로필 목록 & 모니터링</h3>
       <div class="list-container" id="profile_list">
         <!-- JS 렌더링 -->
       </div>
 
-      <div class="form-section">
-        <span class="section-label">실시간 모니터링</span>
+      <!-- 2. 실시간 모니터링 (Bottom) -->
+      <div class="form-section" style="margin-bottom: 0;">
+        <span class="section-label">실시간 영상 스트림</span>
         <div class="row">
           <input id="preview_url" placeholder="미리보기 URL 직접 입력" />
         </div>
