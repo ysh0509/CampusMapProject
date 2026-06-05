@@ -18,23 +18,18 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 <style>
-  /* [Design System] admin_theme.css 기반 Dark Enterprise Theme */
   :root {
-    --bg-main: #0f172a;           /* Deep Navy */
-    --bg-card: rgba(30, 41, 59, 0.7); /* Glassmorphism Card */
+    --bg-main: #0f172a;
+    --bg-card: rgba(30, 41, 59, 0.7);
     --bg-input: rgba(15, 23, 42, 0.8);
-    
-    --text-primary: #f8fafc;      /* Off-white */
-    --text-secondary: #94a3b8;    /* Slate */
-    
-    --accent-primary: #3b82f6;    /* Blue */
-    --accent-success: #10b981;    /* Green */
-    --accent-warning: #f59e0b;    /* Amber */
-    --accent-danger: #ef4444;     /* Red */
-    
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent-primary: #3b82f6;
+    --accent-success: #10b981;
+    --accent-warning: #f59e0b;
+    --accent-danger: #ef4444;
     --border-color: rgba(255, 255, 255, 0.1);
     --glass-blur: blur(12px);
-    
     --radius-lg: 20px;
     --radius-md: 12px;
     --radius-sm: 8px;
@@ -48,8 +43,6 @@
     color: var(--text-primary); 
   }
   .page { max-width: 1400px; margin: 0 auto; padding: 24px; }
-  
-  /* [Layout] */
   .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
   .section { 
     background: var(--bg-card); 
@@ -62,10 +55,9 @@
   .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
   .section h2 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
 
-  /* [Analysis Settings Panel] */
   .analysis-panel { 
     display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
     gap: 16px; 
     background: var(--bg-input);
     padding: 20px;
@@ -73,10 +65,17 @@
     margin-bottom: 24px;
     border: 1px solid var(--border-color);
   }
+  /* 사용자 지정 날짜 입력창을 위한 그리드 확장 */
+  .custom-date-row {
+    grid-column: 1 / -1;
+    display: none;
+    gap: 16px;
+    padding: 10px 0;
+  }
   .filter-group { display: flex; flex-direction: column; gap: 6px; }
   .filter-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
   
-  .filter-group select, .filter-group button { 
+  .filter-group select, .filter-group input, .filter-group button { 
     padding: 10px; 
     border: 1px solid var(--border-color); 
     border-radius: var(--radius-sm); 
@@ -85,7 +84,7 @@
     font-size: 14px; 
     outline: none;
   }
-  .filter-group select:focus { border-color: var(--accent-primary); }
+  .filter-group select:focus, .filter-group input:focus { border-color: var(--accent-primary); }
 
   .btn-primary { 
     background: var(--accent-primary) !important; 
@@ -97,10 +96,7 @@
   }
   .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
 
-  /* [Chart Area] */
   .chart-container { width: 100%; height: 450px; position: relative; }
-
-  /* [Table Style] */
   .table-container { overflow-x: auto; margin-top: 24px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--text-primary); }
   th { 
@@ -112,13 +108,11 @@
   }
   td { padding: 12px; border-bottom: 1px solid var(--border-color); }
   
-  /* [Badges] */
   .badge { padding: 4px 10px; border-radius: 999px; font-weight: 700; font-size: 11px; }
   .badge.low { background: rgba(16, 185, 129, 0.2); color: var(--accent-success); }
   .badge.mid { background: rgba(245, 158, 11, 0.2); color: var(--accent-warning); }
   .badge.high { background: rgba(239, 68, 68, 0.2); color: var(--accent-danger); }
 
-  /* [Pagination] */
   .pagination { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 16px; }
   .pagination button { 
     padding: 6px 14px; 
@@ -135,7 +129,6 @@
     .section-header { flex-direction: column; align-items: flex-start; gap: 12px; }
   }
 </style>
-
 </head>
 
 <body>
@@ -184,6 +177,28 @@
                 <option value="MID">MID</option>
                 <option value="HIGH">HIGH</option>
               </select>
+            </div>
+
+            <div class="filter-group">
+              <label>조회 기간 (Time Range)</label>
+              <select id="filter-date-range">
+                <option value="all">전체 (All Time)</option>
+                <option value="7">최근 7일 (Last 7 Days)</option>
+                <option value="30">최근 30일 (Last 30 Days)</option>
+                <option value="custom">사용자 지정 (Custom)</option>
+              </select>
+            </div>
+
+            <!-- 사용자 지정 날짜 영역 -->
+            <div id="custom-date-inputs" class="custom-date-row">
+              <div class="filter-group" style="flex: 1;">
+                <label>시작일</label>
+                <input type="date" id="date-start">
+              </div>
+              <div class="filter-group" style="flex: 1;">
+                <label>종료일</label>
+                <input type="date" id="date-end">
+              </div>
             </div>
 
             <div class="filter-group" style="justify-content: flex-end;">

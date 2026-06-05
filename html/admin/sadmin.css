@@ -21,7 +21,6 @@
 body {
   background-color: var(--bg-main);
   color: var(--text-primary);
-  display: flex;
   min-height: 100vh;
 }
 

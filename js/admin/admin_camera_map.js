@@ -1,3 +1,8 @@
+/**
+ * @file admin_camera_map.js
+ * @description 카메라와 노드/엣지 간의 매핑을 관리하는 관리자 로직
+ */
+
 import { protectPage } from '../../js/admin/common/adminRouterGuard.js';
 import { initAdminHeader } from '../../js/admin/common/adminHeader.js';
 import { supabase } from '../../js/admin/common/adminApi.js';
@@ -27,7 +32,7 @@ const el = {
 };
 
 // --- State Management ---
-let editId = null;
+let editId = null; // camera_node_map의 PK
 let selectedNodeId = null;
 let selectedEdgeId = null;
 
@@ -62,31 +67,29 @@ function isIndoor() {
   return el.nodeScope.value === 'indoor';
 }
 
-// --- Map Initialization ---
+// --- Map Initialization 수정 ---
 
-
-// --- Indoor Map 초기화 (안정성 강화) ---
 function initIndoorMap() {
   if (indoorMap) return;
-
   try {
     indoorMap = L.map('indoor-map', {
       crs: L.CRS.Simple,
       zoomControl: true,
       attributionControl: false
     });
-    
-    // 에러 방지를 위한 초기 뷰 설정
     indoorMap.setView([0, 0], 1);
-
-    // 레이어 그룹 생성
+    
     indoorNodeLayer = L.layerGroup().addTo(indoorMap);
     indoorEdgeLayer = L.layerGroup().addTo(indoorMap);
     
-    // 빈 이미지 레이어 (좌표계 기준 설정)
-    indoorImageLayer = L.imageOverlay('', [[0, 0], [1000, 1000]]).addTo(indoorMap); 
+    // 이미지 레이어 생성 시 클릭 이벤트가 레이어를 통과하도록 설정
+    indoorImageLayer = L.imageOverlay('', [[0, 0], [1000, 1000]]);
+    indoorImageLayer.addTo(indoorMap);
     
-    console.log("✅ Indoor map initialized with stable view.");
+    // 핵심: 이미지 레이어가 클릭 이벤트를 가로채지 않도록 처리
+    indoorImageLayer.getElement().style.pointerEvents = 'none'; 
+
+    console.log("✅ Indoor map initialized.");
   } catch (e) {
     console.error("❌ Failed to initialize indoor map:", e);
     indoorMap = null;
@@ -126,9 +129,20 @@ function toggleScopePanels() {
 
 // --- Data Loading ---
 async function loadCameras() {
-  const { data, error } = await supabase.from('camera_profiles').select('camera_id,name').order('camera_id');
-  if (error) return setStatus(`Camera load failed: ${error.message}`, false);
-  el.cameraId.innerHTML = (data || []).map(c => `<option value="${c.camera_id}">${c.camera_id}${c.name ? ` (${c.name})` : ''}</option>`).join('');
+  // [수정됨] schema에 맞춰 'name' 대신 'camera_name'을 선택합니다.
+  const { data, error } = await supabase
+    .from('camera_profiles')
+    .select('camera_id, camera_name')
+    .order('camera_id', { ascending: true });
+
+  if (error) {
+    console.error('[Error] loadCameras:', error);
+    return setStatus(`Camera load failed: ${error.message}`, false);
+  }
+
+  el.cameraId.innerHTML = (data || []).map(c => 
+    `<option value="${c.camera_id}">${c.camera_id}${c.camera_name ? ` (${c.camera_name})` : ''}</option>`
+  ).join('');
 }
 
 async function loadBuildingsFloors() {
@@ -149,10 +163,8 @@ function renderFloorOptions(buildingId) {
 
 async function loadIndoorData() {
   const floorId = Number(el.floorId.value);
-  
   if (!indoorMap || !indoorNodeLayer || !indoorEdgeLayer) return;
 
-  // 1. 층 선택이 없으면 초기화 후 종료
   if (!floorId) {
     indoorNodes = [];
     indoorEdges = [];
@@ -163,43 +175,21 @@ async function loadIndoorData() {
   }
 
   const floor = floors.find(f => Number(f.id) === floorId);
-  
   if (floor && floor.map_image_url) {
-    // [핵심 수정] 이미지가 로드될 때까지 기다리는 로직 강화
-    console.log("Setting image URL:", floor.map_image_url);
-    
-    // 기존 로드 이벤트가 중복될 수 있으므로 제거 후 재등록
     indoorImageLayer.off('load'); 
-    
     indoorImageLayer.setUrl(floor.map_image_url);
-
-    // 이미지 로드 완료 이벤트 핸들러
     indoorImageLayer.on('load', () => {
-      console.log("✅ Image Load Success. Fitting bounds...");
-      
-      // 1. 지도 컨테이너 크기 재계산 (회색 화면 방지의 핵심)
       indoorMap.invalidateSize();
-      
-      // 2. 이미지의 경계에 지도를 맞춤
-      // CRS.Simple를 사용하므로 [0,0]에서 [1000,1000] 혹은 이미지 실제 크기에 맞춰야 함
-      // floor 스키마의 scale 값을 활용하거나 기본 범위를 지정
       indoorMap.fitBounds([[0, 0], [1000, 1000]]);
     });
-
-    // 만약 이미 캐시되어 있어 load 이벤트가 바로 안 뜨는 경우를 대비한 fallback
-    // (이미지가 이미 로드된 상태라면 호출될 수 있도록)
     setTimeout(() => {
         if (indoorImageLayer._url && indoorMap.getBounds().equals([[0,0],[0,0]])) {
              indoorMap.invalidateSize();
              indoorMap.fitBounds([[0, 0], [1000, 1000]]);
         }
     }, 500);
-
-  } else {
-    console.warn("No map image URL found for this floor.");
   }
 
-  // 3. 노드 및 엣지 데이터 로드 (기존 로직 유지)
   const [nRes, eRes] = await Promise.all([
     supabase.from('indoor_nodes').select('*').eq('floor_id', floorId),
     supabase.from('indoor_edges').select('*')
@@ -218,16 +208,13 @@ async function loadIndoorData() {
 }
 
 
+// --- renderIndoorLayers 수정 (이벤트 바인딩 강화) ---
 
-// --- Indoor 레이어 렌더링 (엣지 복원 및 마커 축소) ---
 function renderIndoorLayers() {
   if (!indoorNodeLayer || !indoorEdgeLayer) return;
-
-  // 기존 레이어 전체 삭제 (잔상 제거)
   indoorNodeLayer.clearLayers();
   indoorEdgeLayer.clearLayers();
 
-  // 1. 엣지(Edge) 렌더링: 경로 복원
   if (indoorEdges.length > 0) {
     const nodeMap = {};
     indoorNodes.forEach(n => { nodeMap[n.id] = n; });
@@ -237,50 +224,54 @@ function renderIndoorLayers() {
       const endNode = nodeMap[e.to_node];
 
       if (startNode && endNode) {
-        // 엣지 선 그리기
+        // 좌표 순서 확인: [y, x] 순서인지 데이터 확인 필요
         const edgeLine = L.polyline([[startNode.y, startNode.x], [endNode.y, endNode.x]], {
-          color: '#ef4444', // Red
-          weight: 3,        // 선 굵기 조절
+          color: '#ef4444',
+          weight: 5, // 클릭 영역 확보를 위해 조금 더 두껍게
           opacity: 0.7,
           lineJoin: 'round'
         }).addTo(indoorEdgeLayer);
 
-        // 엣지 클릭 이벤트 (매핑 대상 선택용)
         edgeLine.on('click', (ev) => {
-          ev.stopPropagation();
+          // Leaflet 전용 이벤트 전파 중단 사용
+          L.DomEvent.stopPropagation(ev); 
+          
           if (!isIndoor() || el.targetType.value !== 'edge') return;
+          
           selectedEdgeId = e.id;
           selectedNodeId = null;
           syncSelectedTargetInput();
           setStatus(`Indoor Edge 선택됨: ${e.id}`);
+          console.log("✅ Indoor Edge Clicked:", e.id);
         });
       }
     });
-    console.log(`✅ Rendered ${indoorEdges.length} indoor edges.`);
   }
 
-  // 2. 노드(Node) 렌더링: 마커 크기 축소
   indoorNodes.forEach(n => {
     const marker = L.circleMarker([n.y, n.x], {
-      radius: 5,           // [수정] 크기를 8에서 5로 축소
-      color: '#10b981',    // Green
+      radius: 8, // 클릭하기 쉽도록 반지름 확대
+      color: '#10b981',
       fillColor: '#10b981',
       fillOpacity: 0.9,
-      weight: 1            // 테두리 두께 최적화
+      weight: 2
     }).addTo(indoorNodeLayer);
 
     marker.bindTooltip(`Node ${n.id}`, { direction: 'top', offset: [0, -5] });
     
     marker.on('click', (ev) => {
-      ev.stopPropagation();
+      // Leaflet 전용 이벤트 전파 중단 사용
+      L.DomEvent.stopPropagation(ev);
+
       if (!isIndoor() || el.targetType.value !== 'node') return;
+      
       selectedNodeId = n.id;
       selectedEdgeId = null;
       syncSelectedTargetInput();
       setStatus(`Indoor Node 선택됨: ${n.id}`);
+      console.log("✅ Indoor Node Clicked:", n.id);
     });
   });
-  console.log(`✅ Rendered ${indoorNodes.length} indoor nodes.`);
 }
 
 
@@ -343,9 +334,9 @@ async function loadMappings() {
     const target = m.target_type === 'node' ? `node:${m.node_id ?? '-'}` : `edge:${m.edge_id ?? '-'}`;
     const floorLabel = m.floors?.floor_number ? `${m.floors.floor_number}F` : '-';
     return `<div class="item ${editId === m.id ? 'active' : ''}" data-id="${m.id}">
-      <div class="item-main"><span class="item-id">${m.camera_id}</span><span>${m.target_type.toUpperCase()}</span></div>
-      <div class="item-meta"><span>${target}</span><span>|</span><span>${floorLabel}</span></div>
-    </div>`;
+      <div class="item-main"><span class="item-id">${m.camera_id}</span><span>${m.target_type.toUpperCase()}</span></div >
+      <div class="item-meta"><span>${target}</span><span>|</span><span>${floorLabel}</span></div >
+    </div >`;
   }).join('');
 
   el.mapList.querySelectorAll('.item').forEach(node => {

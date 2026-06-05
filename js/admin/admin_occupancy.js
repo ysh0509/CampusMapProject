@@ -1,6 +1,6 @@
 /**
  * @file admin_occupancy.js
- * @description 시계열 정렬 보정 및 Silent Auto-Refresh 기능이 적용된 분석 엔진
+ * @description 전역 혼잡도 분석 엔진 (차트는 전체 데이터 기반, 테이블은 필터 기반)
  */
 
 import { supabase } from '../../js/admin/common/adminApi.js';
@@ -18,6 +18,13 @@ const filterAnalysisDimension = document.querySelector('#filter-analysis-dimensi
 const filterChartType = document.querySelector('#filter-chart-type');
 const filterEventsScope = document.querySelector('#filter-events-scope');
 const filterEventsLevel = document.querySelector('#filter-events-level');
+
+// 기간 필터 관련 요소
+const filterDateRange = document.querySelector('#filter-date-range');
+const customDateInputs = document.querySelector('#custom-date-inputs');
+const dateStart = document.querySelector('#date-start');
+const dateEnd = document.querySelector('#date-end');
+
 const btnRefreshAnalysis = document.querySelector('#btn-refresh-analysis');
 const btnPrevEvents = document.querySelector('#btn-prev-events');
 const btnNextEvents = document.querySelector('#btn-next-events');
@@ -28,7 +35,10 @@ const chartTitle = document.querySelector('#chart-title');
 const PAGE_SIZE = 50;
 let eventsPage = 1;
 let totalEvents = 0;
-let rawEventData = []; // 차트 엔진이 사용하는 정렬된 데이터 (과거 -> 현재)
+
+let tableData = [];      // [테이블용] 현재 필터링된 로그 데이터 (최신순)
+let globalChartData = []; // [차트용] 필터와 무관한 전체 노드 집계 데이터 (과거->현재 순)
+
 let occupancyChart = null;
 
 // --- 헬퍼 함수 ---
@@ -41,8 +51,7 @@ const levelBadge = (level) => {
 const formatRatio = (v) => (v !== null && v !== undefined) ? (v * 100).toFixed(1) + '%' : '-';
 
 /**
- * [개선] 데이터 정렬 함수
- * 차트용 데이터는 반드시 과거 -> 현재(Ascending) 순서여야 시계열 흐름이 정상적으로 보임
+ * 차트용 데이터 정렬 (과거 -> 현재)
  */
 function sortDataChronologically(data) {
   return [...data].sort((a, b) => new Date(a.captured_at) - new Date(b.captured_at));
@@ -61,7 +70,7 @@ function initChart() {
       labels: [],
       datasets: [
         {
-          label: '혼잡도 (%)',
+          label: '평균 혼잡도 (%)',
           data: [],
           yAxisID: 'yOccupancy',
           borderColor: '#3b82f6',
@@ -72,7 +81,7 @@ function initChart() {
         },
         {
           type: 'bar',
-          label: '인원 수',
+          label: '평균 인원 수',
           data: [],
           yAxisID: 'yPeople',
           backgroundColor: 'rgba(148, 163, 184, 0.3)',
@@ -180,16 +189,58 @@ async function loadNodeIdOptions() {
 }
 
 /**
- * [개선] 테이블 UI 전용 업데이트 함수
- * 실시간 갱신 시 화면 깜빡임을 방지하기 위해 HTML을 통째로 갈아끼우는 대신 데이터만 매핑
+ * [테이블용] 필터링된 최신 로그 로드
  */
-function updateTableUI(data) {
-  if (!data || data.length === 0) {
-    eventsTableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">데이터 없음</td></tr>`;
+async function loadTableEvents() {
+  const from = (eventsPage - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
+  let query = supabase.from('occupancy_events')
+    .select('*', { count: 'exact' })
+    .order('captured_at', { ascending: false })
+    .range(from, to);
+
+  // 1. 기본 필터 적용
+  if (filterEventsNode.value !== 'all') query = query.eq('node_id', filterEventsNode.value);
+  if (filterEventsScope.value) query = query.eq('node_scope', filterEventsScope.value);
+  if (filterEventsLevel.value) query = query.eq('congestion_level', filterEventsLevel.value);
+
+  // 2. 기간 필터 적용
+  const range = filterDateRange.value;
+  const now = new Date();
+  if (range === '7') {
+    query = query.gte('captured_at', new Date(now.setDate(now.getDate() - 7)).toISOString());
+  } else if (range === '30') {
+    query = query.gte('captured_at', new Date(now.setDate(now.getDate() - 30)).toISOString());
+  } else if (range === 'custom') {
+    if (dateStart.value) query = query.gte('captured_at', new Date(dateStart.value).toISOString());
+    if (dateEnd.value) query = query.lte('captured_at', new Date(dateEnd.value).toISOString() + 'T23:59:59');
+  }
+
+  const { data, error, count } = await query;
+  if (error) {
+    console.error('[Error] loadTableEvents:', error.message);
+    eventsTableBody.innerHTML = `<tr><td colspan="8" style="color:red;">로드 실패</td</tr>`;
     return;
   }
 
-  // 테이블은 관리 효율을 위해 최신순(Descending)으로 보여줌
+  totalEvents = count || 0;
+  const totalPages = Math.max(1, Math.ceil(totalEvents / PAGE_SIZE));
+  eventsPageInfo.textContent = `${eventsPage} / ${totalPages}`;
+  
+  tableData = data || [];
+  updateTableUI(tableData);
+}
+
+/**
+ * [테이블 UI 업데이트]
+ */
+function updateTableUI(data) {
+  if (!data || data.length === 0) {
+    eventsTableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">데이터 없음</td</tr>`;
+    return;
+  }
+
   eventsTableBody.innerHTML = data.map(row => `
     <tr>
       <td>${row.node_id}</td>
@@ -204,88 +255,75 @@ function updateTableUI(data) {
   `).join('');
 }
 
-async function loadEvents() {
-  eventsTableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">데이터 로딩 중...</td></tr>`;
-  const from = (eventsPage - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
-
-  let query = supabase.from('occupancy_events').select('*', { count: 'exact' }).order('captured_at', { ascending: false }).range(from, to);
-
-  if (filterEventsNode.value !== 'all') query = query.eq('node_id', filterEventsNode.value);
-  if (filterEventsScope.value) query = query.eq('node_scope', filterEventsScope.value);
-  if (filterEventsLevel.value) query = query.eq('congestion_level', filterEventsLevel.value);
-
-  const { data, error, count } = await query;
-  if (error) {
-    console.error('[Error] loadEvents:', error.message);
-    eventsTableBody.innerHTML = `<tr><td colspan="8" style="color:red;">로드 실패</td></tr>`;
-    return;
-  }
-
-  totalEvents = count || 0;
-  const totalPages = Math.max(1, Math.ceil(totalEvents / PAGE_SIZE));
-  eventsPageInfo.textContent = `${eventsPage} / ${totalPages}`;
-  
-  // [중요] 차트 엔진용 원본 데이터는 정렬 보정(과거->현재)하여 저장
-  rawEventData = sortDataChronologically(data || []);
-
-  updateTableUI(data);
-  updateChart(rawEventData, filterAnalysisDimension.value, filterChartType.value);
-}
-
 /**
- * [핵심] Silent Auto-Refresh
- * 사용자가 조작 중인 화면을 방해하지 않고 백그라운드에서 데이터만 동기화
+ * [차트용] 전체 데이터 로드 (필터 무시)
+ * 차트가 '전체'를 보여주기 위해 필터 조건 없이 데이터를 가져옴
  */
-async function silentRefresh() {
-  console.log('[Auto-Refresh] 데이터 동기화 중...');
+async function loadGlobalChartData() {
+  console.log('[Chart] 전체 데이터 동기화 중...');
   try {
-    let query = supabase.from('occupancy_events').select('*', { count: 'exact' }).order('captured_at', { ascending: false }).range(0, PAGE_SIZE - 1);
+    let query = supabase
+      .from('occupancy_events')
+      .select('*')
+      .order('captured_at', { ascending: true });
 
-    if (filterEventsNode.value !== 'all') query = query.eq('node_id', filterEventsNode.value);
-    if (filterEventsScope.value) query = query.eq('node_scope', filterEventsScope.value);
-    if (filterEventsLevel.value) query = query.eq('congestion_level', filterEventsLevel.value);
-
-    const { data, error, count } = await query;
-    if (error) throw error;
-
-    // 데이터 교체 (사용자는 눈치채지 못하게 차트와 테이블만 조용히 업데이트)
-    rawEventData = sortDataChronologically(data || []);
-    totalEvents = count || 0;
-
-    // 테이블 업데이트 (현재 페이지가 1페이지일 때만 자동 갱신하여 사용자 혼란 방지)
-    if (eventsPage === 1) {
-      updateTableUI(data);
+    // 기간 필터 적용 (차트 시계열을 위해)
+    const range = filterDateRange.value;
+    const now = new Date();
+    if (range === '7') {
+      query = query.gte('captured_at', new Date(now.setDate(now.getDate() - 7)).toISOString());
+    } else if (range === '30') {
+      query = query.gte('captured_at', new Date(now.setDate(now.getDate() - 30)).toISOString());
+    } else if (range === 'custom') {
+      if (dateStart.value) query = query.gte('captured_at', new Date(dateStart.value).toISOString());
+      if (dateEnd.value) query = query.lte('captured_at', new Date(dateEnd.value).toISOString() + 'T23:59:59');
     }
 
-    // 차트 업데이트
-    updateChart(rawEventData, filterAnalysisDimension.value, filterChartType.value);
-    
-    console.log('[Auto-Refresh] 동기화 성공');
+    const { data, error } = await query;
+    if (error) throw error;
+
+    globalChartData = data || [];
+    updateChart(globalChartData, filterAnalysisDimension.value, filterChartType.value);
+    console.log(`[Chart] ${globalChartData.length}건 데이터 동기화 완료`);
   } catch (err) {
-    console.error('[Auto-Refresh Error]', err.message);
+    console.error('[Chart Error]', err.message);
   }
 }
 
 // =========================
 // EVENT LISTENERS
 // =========================
-btnRefreshAnalysis.onclick = () => {
+
+// 분석 실행 버튼
+btnRefreshAnalysis.onclick = async () => {
   eventsPage = 1;
-  loadEvents();
+  await Promise.all([loadTableEvents(), loadGlobalChartData()]);
 };
 
-filterEventsNode.onchange = () => { eventsPage = 1; loadEvents(); };
-filterEventsScope.onchange = () => { eventsPage = 1; loadEvents(); };
-filterEventsLevel.onchange = () => { eventsPage = 1; loadEvents(); };
+// 필터 변경 시
+filterEventsNode.onchange = () => { eventsPage = 1; loadTableEvents(); };
+filterEventsScope.onchange = () => { eventsPage = 1; loadTableEvents(); };
+filterEventsLevel.onchange = () => { eventsPage = 1; loadTableEvents(); };
 
-// 차트 모드/타입 변경 시 데이터 재로딩 없이 즉시 차트만 업데이트
-filterChartType.onchange = () => updateChart(rawEventData, filterAnalysisDimension.value, filterChartType.value);
-filterAnalysisDimension.onchange = () => updateChart(rawEventData, filterAnalysisDimension.value, filterChartType.value);
+// 기간 필터 변경 시
+filterDateRange.onchange = () => {
+  if (filterDateRange.value === 'custom') {
+    customDateInputs.style.display = 'flex';
+  } else {
+    customDateInputs.style.display = 'none';
+  }
+  eventsPage = 1;
+  // 기간이 바뀌면 차트와 테이블 모두 새로 불러와야 함
+  Promise.all([loadTableEvents(), loadGlobalChartData()]);
+};
 
-btnPrevEvents.onclick = () => { if (eventsPage > 1) { eventsPage--; loadEvents(); } };
+// 차트 타입/차원 변경
+filterChartType.onchange = () => updateChart(globalChartData, filterAnalysisDimension.value, filterChartType.value);
+filterAnalysisDimension.onchange = () => updateChart(globalChartData, filterAnalysisDimension.value, filterChartType.value);
+
+btnPrevEvents.onclick = () => { if (eventsPage > 1) { eventsPage--; loadTableEvents(); } };
 btnNextEvents.onclick = () => {
-  if (eventsPage < Math.ceil(totalEvents / PAGE_SIZE)) { eventsPage++; loadEvents(); }
+  if (eventsPage < Math.ceil(totalEvents / PAGE_SIZE)) { eventsPage++; loadTableEvents(); }
 };
 
 // =========================
@@ -295,10 +333,25 @@ btnNextEvents.onclick = () => {
   console.log('[Occupancy Analytics] 엔진 가동 중...');
   initChart();
   await loadNodeIdOptions();
-  await loadEvents();
-
-  // 30초마다 자동 갱신 실행
-  setInterval(silentRefresh, 30000);
   
-  console.log('[Occupancy Analytics] 가동 완료 (Silent Refresh Active)');
+  // 초기 로드
+  await Promise.all([
+    loadTableEvents(),
+    loadGlobalChartData()
+  ]);
+
+  // 30초마다 데이터 동기화 (Silent Refresh)
+  setInterval(async () => {
+    console.log('[Auto-Refresh] 데이터 동기화 중...');
+    try {
+      if (eventsPage === 1) {
+        await loadTableEvents();
+      }
+      await loadGlobalChartData();
+    } catch (err) {
+      console.error('[Auto-Refresh Error]', err.message);
+    }
+  }, 30000);
+  
+  console.log('[Occupancy Analytics] 가동 완료');
 })();

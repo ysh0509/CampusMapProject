@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<script>
+    window.__ENV = {
+      SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+    };
+  </script>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <title>디바이스 로그 모니터링 | 스마트 캠퍼스</title>
+  <style>
+    :root {
+      --bg-main: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --bg-input: rgba(15, 23, 42, 0.8);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-primary: #3b82f6;
+      --accent-success: #10b981;
+      --accent-warning: #f59e0b;
+      --accent-danger: #ef4444;
+      --border-color: rgba(255, 255, 255, 0.1);
+      --glass-blur: blur(12px);
+      --radius-lg: 20px;
+      --radius-md: 12px;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    body { 
+      margin: 0; font-family: 'Pretendard', sans-serif; 
+      background: var(--bg-main); color: var(--text-primary); 
+    }
+
+    .container { padding: 32px; max-width: 1600px; margin: 0 auto; }
+
+    h2 { font-size: 1.75rem; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+
+    .monitor-layout { display: flex; flex-direction: column; gap: 24px; }
+
+    /* 필터 바 스타일 */
+    .filter-bar {
+      background: var(--bg-card);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px 24px;
+      display: flex;
+      gap: 24px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .filter-group { display: flex; flex-direction: column; gap: 8px; }
+    .filter-group label { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
+    .filter-group select {
+      padding: 10px 14px; background: var(--bg-input);
+      border: 1px solid var(--border-color); border-radius: 8px;
+      color: var(--text-primary); outline: none; min-width: 180px;
+      cursor: pointer;
+    }
+
+    /* 로그 카드 그리드 */
+    .log-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+      gap: 20px;
+      align-items: start;
+    }
+
+    .log-card {
+      background: var(--bg-card);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      height: 400px; 
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease;
+    }
+    .log-card:hover { transform: translateY(-4px); border-color: var(--accent-primary); }
+
+    .log-card h3 { 
+      margin: 0 0 16px 0; font-size: 1.1rem; color: var(--text-primary);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .log-card h3 span { display: flex; align-items: center; gap: 8px; }
+
+    /* 터미널 스타일 (로그 출력창) */
+    .terminal-container {
+      flex: 1;
+      background: #000;
+      border-radius: var(--radius-md);
+      padding: 12px;
+      overflow-y: auto;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.85rem;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .log-line { 
+      margin-bottom: 6px; line-height: 1.4; word-break: break-all;
+      border-left: 3px solid transparent; padding-left: 8px;
+    }
+    /* 로그 레벨별 색상 */
+    .log-line.INFO { border-color: var(--accent-success); color: #a7f3d0; }
+    .log-line.WARN { border-color: var(--accent-warning); color: #fde68a; }
+    .log-line.ERROR, .log-line.CRITICAL { border-color: var(--accent-danger); color: #fca5a5; }
+
+    .log-timestamp { color: var(--text-secondary); margin-right: 8px; font-size: 0.75rem; }
+    .log-cat { color: #818cf8; margin-right: 8px; font-size: 0.75rem; text-transform: uppercase; }
+
+    .btn-clear {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--accent-danger);
+      border: 1px solid var(--accent-danger);
+      padding: 4px 10px; border-radius: 6px; font-size: 0.75rem;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-clear:hover { background: var(--accent-danger); color: white; }
+
+    @media (max-width: 1024px) {
+      .log-grid { grid-template-columns: 1fr; }
+      .filter-bar { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+  <div id="admin-header"></div>
+
+  <div class="container">
+    <h2><i class="fas fa-terminal"></i> 디바이스 실시간 로그 모니터링</h2>
+
+    <div class="monitor-layout">
+      <!-- 필터 바 -->
+      <section class="filter-bar">
+        <div class="filter-group">
+          <label>하드웨어 ID</label>
+          <select id="filter-hw-id">
+            <option value="ALL">모든 디바이스</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>로그 레벨</label>
+          <select id="filter-level">
+            <option value="ALL">모든 레벨</option>
+            <option value="INFO">INFO</option>
+            <option value="WARN">WARN</option>
+            <option value="ERROR">ERROR</option>
+            <option value="CRITICAL">CRITICAL</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>카테고리</label>
+          <select id="filter-category">
+            <option value="ALL">모든 카테고리</option>
+            <option value="SYSTEM">SYSTEM</option>
+            <option value="SENSOR">SENSOR</option>
+            <option value="OTA">OTA</option>
+            <option value="NETWORK">NETWORK</option>
+            <option value="CONTROL">CONTROL</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- 로그 카드 그리드 컨테이너 -->
+      <section class="log-grid" id="log-grid-container">
+        <!-- JS에서 디바이스별 카드가 동적으로 생성됩니다. -->
+      </section>
+    </div>
+  </div>
+
+  <script type="module" src="/js/admin/admin_device_log.js"></script>
+</body>
+</html>

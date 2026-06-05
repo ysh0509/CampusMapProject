@@ -2,6 +2,8 @@ import { supabase } from '/js/admin/common/adminApi.js';
 import { initAdminHeader } from '/js/admin/common/adminHeader.js';
 import { protectPage } from '/js/admin/common/adminRouterGuard.js';
 
+
+await protectPage();
 initAdminHeader('firmware');
 
 // DOM 요소

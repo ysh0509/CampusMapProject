@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<script>
+<html lang="ko">
+  <script>
   window.__ENV = {
     SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
   };
 </script>
-<html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -170,24 +170,28 @@
   </style>
 </head>
 
-<body>
+<body class="page">
   <div id="admin-header"></div>
 
   <div class="container">
     <!-- Left Column: Configuration (Setting) -->
     <div class="panel">
-      <h3><i class="fas fa-cog"></i> 카메라 설정</h3>
+      <h3 id="control-title"><i class="fas fa-cog"></i> 카메라 설정</h3>
       
       <div class="form-section">
         <span class="section-label">기본 정보 및 하드웨어</span>
         <div class="row">
           <input id="camera_id" placeholder="Camera ID" />
           <input id="camera_name" placeholder="카메라 이름" />
-        </div>
-        <div class="form-group">
-          <label style="font-size: 13px; color: var(--text-secondary);">Hardware ID (ESP32 고유번호)</label>
-          <input id="hardware_id" placeholder="예: HD_NODE_01" />
-        </div>
+        </div >
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label style="font-size: 13px; color: var(--text-secondary); display: block; margin-bottom: 4px;">Hardware Profile</label>
+          <!-- 수정된 부분: input -> select -->
+          <select id="hardware_id">
+            <option value="">-- 하드웨어 선택 --</option>
+            <!-- JS에서 hardware_profiles 목록을 동적으로 채웁니다 -->
+          </select>
+        </div >
         <div class="row">
           <select id="node_scope">
             <option value="indoor">Indoor (실내)</option>
@@ -196,62 +200,62 @@
           <label class="checkbox-group" style="font-size:14px; margin:0;">
             <input type="checkbox" id="is_active" style="width:auto;" /> 활성 상태
           </label>
-        </div>
-      </div>
+        </div >
+      </div >
 
       <div class="form-section">
         <span class="section-label">Vision Control Mode</span>
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom: 16px;">
           <select id="control_mode">
             <option value="AUTO">AUTO (자동 추종)</option>
             <option value="MANUAL">MANUAL (수동 제어)</option>
             <option value="LOCKED">LOCKED (동작 정지)</option>
           </select>
-        </div>
+        </div >
 
         <div id="mode_settings_area" class="mode-settings-container">
           <!-- MANUAL 모드 UI -->
           <div id="manual_settings" style="display: none;">
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom: 16px;">
               <label style="font-size: 12px;">Target Angle (°)</label>
               <input type="number" id="manual_angle" min="0" max="180" value="0" />
-            </div>
+            </div >
             <div class="form-group checkbox-group" style="font-size: 13px;">
               <input type="checkbox" id="manual_buzzer" style="width:auto;" />
               <label for="manual_buzzer">Enable Manual Buzzer</label>
-            </div>
-          </div>
+            </div >
+          </div >
           <!-- LOCKED 모드 안내 -->
           <div id="locked_message" style="display: none;">
             <p class="mode-info locked"><i class="fas fa-exclamation-triangle"></i> 동작 정지 모드입니다.</p>
-          </div>
+          </div >
           <!-- AUTO 모드 안내 -->
           <div id="auto_message" style="display: block;">
             <p class="mode-info auto"><i class="fas fa-robot"></i> AI 자동 제어 모드</p>
-          </div>
-        </div>
-      </div>
+          </div >
+        </div >
+      </div >
 
       <div class="form-section">
         <span class="section-label">영상 및 ROI 설정</span>
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom: 16px;">
           <input id="video_source" placeholder="Source (0, 1, URL...)" />
-        </div>
+        </div >
         <div class="row">
           <input id="preview_url" placeholder="미리보기 URL" />
           <button id="btn_preview" class="btn-secondary" type="button">적용</button>
-        </div>
+        </div >
         <div class="usb-group">
           <button id="btn_usb_0" class="btn-validate" type="button">USB 0</button>
           <button id="btn_usb_1" class="btn-validate" type="button">USB 1</button>
           <button id="btn_usb_2" class="btn-validate" type="button">USB 2</button>
-        </div>
+        </div >
         <div class="form-group" style="margin-top:15px;">
-          <textarea id="roi_json"></textarea>
-          <div id="roi_msg">ready</div>
+          <textarea id="roi_json" placeholder="ROI JSON 데이터"></textarea>
+          <div id="roi_msg">ready</div >
           <button id="btn_validate" class="btn-validate" style="width:100%; margin-top:8px;" type="button">ROI 검증</button>
-        </div>
-      </div>
+        </div >
+      </div >
 
       <div class="action-buttons" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
         <button id="btn_new" class="btn-new" type="button">새로 만들기</button>
@@ -259,32 +263,30 @@
         <button id="btn_save" class="btn-save" style="grid-column: span 2;" type="button">설정 저장하기</button>
         <button id="btn_delete" class="btn-delete" style="grid-column: span 2;" type="button">이 프로필 삭제</button>
         <button id="btn_set_active" class="btn-success-outline" style="grid-column: span 2;" type="button">✨ 현재 프로필 즉시 활성화</button>
+      </div >
+    </div >
 
-      </div>
-    </div>
-
-    <!-- Right Column: List & Monitor (Vertical Layout) -->
+    <!-- Right Column: List & Monitor -->
     <div class="panel">
-
       <!-- 1. 프로필 목록 (Top) -->
       <h3 style="margin-bottom: 15px;"><i class="fas fa-list"></i> 프로필 목록 & 모니터링</h3>
       <div class="list-container" id="profile_list">
         <!-- JS 렌더링 -->
-      </div>
+      </div >
 
       <!-- 2. 실시간 모니터링 (Bottom) -->
       <div class="form-section" style="margin-bottom: 0;">
         <span class="section-label">실시간 영상 스트림</span>
-        <div class="row">
+        <div class="form-group" style="margin-bottom: 16px;">
           <input id="preview_url" placeholder="미리보기 URL 직접 입력" />
-        </div>
+        </div >
         <div class="video-wrap">
-          <div class="video-overlay" id="preview_overlay">No Stream</div>
+          <div class="video-overlay" id="preview_overlay">No Stream</div >
           <img id="preview_img" class="video-img" alt="stream preview" />
-        </div>
-      </div>
-    </div>
-  </div>
+        </div >
+      </div >
+    </div >
+  </div >
 
   <script type="module" src="/js/admin/admin_vision_control.js"></script>
 </body>

@@ -1,8 +1,10 @@
-import { supabase } from './common/adminApi.js';
-import { protectPage } from './common/adminRouterGuard.js';
+import { protectPage } from '/js/admin/common/adminRouterGuard.js';
+import { initAdminHeader } from '/js/admin/common/adminHeader.js';
+import { supabase } from '/js/admin/common/adminApi.js';
 
-// 1. 페이지 보호 및 권한 확인
 await protectPage();
+initAdminHeader('privilege');
+
 
 const {
   data: { user }

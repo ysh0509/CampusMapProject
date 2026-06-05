@@ -11,11 +11,11 @@ initAdminHeader('vision');
 
 const $ = (id) => document.getElementById(id);
 
-// DOM 요소 맵핑 (HTML의 ID와 1:1 매칭)
+// DOM 요소 맵핑
 const el = {
   cameraId: $('camera_id'),
   cameraName: $('camera_name'),
-  hardwareId: $('hardware_id'),      // [추가]
+  hardwareId: $('hardware_id'), // 이제 select 박스입니다.
   videoSource: $('video_source'),
   nodeScope: $('node_scope'),
   isActive: $('is_active'),
@@ -30,7 +30,6 @@ const el = {
   btnDelete: $('btn_delete'),
   btnSetActive: $('btn_set_active'),
   btnPreview: $('btn_preview'),
-  // [추가] 모드 관련 요소
   controlMode: $('control_mode'),
   modeSettingsArea: $('mode_settings_area'),
   manualSettings: $('manual_settings'),
@@ -38,13 +37,13 @@ const el = {
   autoMessage: $('auto_message'),
   manualAngle: $('manual_angle'),
   manualBuzzer: $('manual_buzzer'),
-  // USB 버튼
   btnUsb0: $('btn_usb_0'),
   btnUsb1: $('btn_usb_1'),
   btnUsb2: $('btn_usb_2')
 };
 
 let profiles = [];
+let hardwareProfiles = []; // hardware_profiles 테이블 데이터 보관
 let selectedId = null;
 
 const defaultRoi = {
@@ -53,6 +52,32 @@ const defaultRoi = {
     "points": [[20, 40], [620, 40], [620, 350], [20, 350]], "capacity": 10
   }]
 };
+
+/* =========================================================
+   NEW: HARDWARE LIST LOADING
+   ========================================================= */
+async function loadHardwareProfiles() {
+  const { data, error } = await supabase
+    .from('hardware_profiles')
+    .select('id, hardware_id')
+    .order('hardware_id', { ascending: true });
+
+  if (error) {
+    console.error('하드웨어 목록 로드 실패:', error.message);
+    return;
+  }
+
+  hardwareProfiles = data || [];
+  
+  // Select 박스 동적 생성
+  el.hardwareId.innerHTML = '<option value="">-- 하드웨어 선택 --</option>';
+  hardwareProfiles.forEach(hw => {
+    const option = document.createElement('option');
+    option.value = hw.id; // DB의 PK인 id(integer)를 값으로 사용
+    option.textContent = hw.hardware_id; // 화면에는 hardware_id(text)를 표시
+    el.hardwareId.appendChild(option);
+  });
+}
 
 /* =========================================================
    UTILITIES
@@ -67,9 +92,8 @@ function setMsg(msg, ok = true) {
 function isValidVideoSource(v) {
   const s = String(v || '').trim();
   if (!s) return false;
-  if (/^\d+$/.test(s)) return true;
   if (/^(rtsp|http|https):\/\//i.test(s)) return true;
-  if (/\.(mp4|avi|mov|mkv|webm)$/i.test(s)) return true;
+  if (/^\d+$/.test(s)) return true; 
   return true;
 }
 
@@ -84,17 +108,14 @@ function validateRoiJsonText(text) {
 }
 
 /* =========================================================
-   DYNAMIC UI LOGIC (모드 변경 시 UI 전환)
+   DYNAMIC UI LOGIC
    ========================================================= */
 function updateModeUI() {
   const mode = el.controlMode.value;
-
-  // 모든 모드 UI 초기화
   el.manualSettings.style.display = 'none';
   el.lockedMessage.style.display = 'none';
   el.autoMessage.style.display = 'none';
 
-  // 선택된 모드에 맞는 UI만 활성화
   if (mode === 'MANUAL') {
     el.manualSettings.style.display = 'block';
   } else if (mode === 'LOCKED') {
@@ -111,8 +132,8 @@ function clearForm() {
   selectedId = null;
   el.cameraId.value = '';
   el.cameraName.value = '';
-  el.hardwareId.value = ''; 
-  el.videoSource.value = '0';
+  el.hardwareId.value = ''; // select 초기화
+  el.videoSource.value = '';
   el.nodeScope.value = 'indoor';
   el.isActive.checked = false;
   el.controlMode.value = 'AUTO'; 
@@ -130,14 +151,16 @@ function clearForm() {
 function fillForm(p) {
   selectedId = p.camera_id;
   el.cameraId.value = p.camera_id ?? '';
-  el.cameraName.value = p.name ?? '';
-  el.hardwareId.value = p.hardware_id ?? ''; 
+  el.cameraName.value = p.camera_name ?? '';
+  
+  // 수정: hd_id(integer)를 select의 value로 설정
+  el.hardwareId.value = p.hd_id ?? ''; 
+  
   el.videoSource.value = String(p.video_source ?? '');
   el.nodeScope.value = p.node_scope ?? 'indoor';
   el.isActive.checked = !!p.is_active;
   el.roiJson.value = JSON.stringify(p.roi_json ?? defaultRoi, null, 2);
   
-  // [중요] Join된 vision_control 데이터 매핑
   el.controlMode.value = p.control_mode || 'AUTO';
   el.manualAngle.value = p.target_angle || 0;
   el.manualBuzzer.checked = !!p.manual_buzzer;
@@ -145,7 +168,7 @@ function fillForm(p) {
   if (el.previewUrl) el.previewUrl.value = String(p.video_source ?? '');
   if (el.previewImg) {
     const v = String(p.video_source ?? '');
-    el.previewImg.src = /^\d+$/.test(v) ? '' : v;
+    el.previewImg.src = /^(rtsp|http|https):\/\//i.test(v) ? v : '';
   }
 
   updateModeUI();
@@ -161,7 +184,7 @@ function renderList() {
         <div class="status-dot ${dotClass}"></div>
         <div class="item-info">
           <span class="item-id">${p.camera_id}</span>
-          <span class="item-sub">${p.name ?? '-'} | ${p.video_source}</span>
+          <span class="item-sub">${p.camera_name ?? '-'} | ${p.video_source}</span>
         </div>
       </div>`;
   }).join('');
@@ -179,7 +202,6 @@ function renderList() {
    DATABASE OPERATIONS (SUPABASE)
    ========================================================= */
 async function loadProfiles() {
-  // camera_profiles와 vision_control을 Join하여 가져옴
   const { data, error } = await supabase
     .from('camera_profiles')
     .select(`
@@ -197,7 +219,6 @@ async function loadProfiles() {
     return;
   }
 
-  // Join된 데이터를 flat하게 변환하여 UI 매핑을 용이하게 함
   profiles = (data || []).map(p => ({
     ...p,
     control_mode: p.vision_control?.mode || 'AUTO',
@@ -210,11 +231,14 @@ async function loadProfiles() {
 
 async function saveProfile() {
   const camera_id = el.cameraId.value.trim();
-  const name = el.cameraName.value.trim();
+  const camera_name = el.cameraName.value.trim();
   const video_source = el.videoSource.value.trim();
   const node_scope = el.nodeScope.value;
   const is_active = el.isActive.checked;
-  const hardware_id = el.hardwareId.value.trim();
+  
+  // 수정: select 박스에서 선택된 value(integer ID)를 가져옴
+  const hd_id = el.hardwareId.value ? parseInt(el.hardwareId.value) : null;
+  
   const control_mode = el.controlMode.value;
   const target_angle = parseInt(el.manualAngle.value) || 0;
   const manual_buzzer = el.manualBuzzer.checked;
@@ -227,20 +251,18 @@ async function saveProfile() {
   if (!v.ok) return setMsg(v.msg, false);
   const roi_json = JSON.parse(roiText);
 
-  // 1. camera_profiles 테이블 업데이트 (기본 정보 및 hardware_id)
   if (is_active) {
     await supabase.from('camera_profiles').update({ is_active: false }).neq('camera_id', camera_id);
   }
 
   const profilePayload = {
-    camera_id, name, video_source, node_scope, roi_json, is_active, hardware_id,
+    camera_id, camera_name, video_source, node_scope, roi_json, is_active, hd_id,
     updated_at: new Date().toISOString()
   };
 
   const { error: profileError } = await supabase.from('camera_profiles').upsert(profilePayload);
   if (profileError) return setMsg(`프로필 저장 실패: ${profileError.message}`, false);
 
-  // 2. vision_control 테이블 업데이트 (모드 및 각도 제어 데이터)
   const visionPayload = {
     camera_id: camera_id, 
     mode: control_mode,
@@ -285,7 +307,6 @@ async function handleActiveStatusChange() {
 
   const targetIsActive = el.isActive.checked;
 
-  // 단일 활성 보장 (다른 모든 카메라 비활성화)
   await supabase.from('camera_profiles').update({ is_active: false });
 
   const { error } = await supabase.from('camera_profiles').update({
@@ -313,7 +334,7 @@ function applyPreview() {
   const url = (el.previewUrl?.value || '').trim();
   if (!url || !el.previewImg) return;
   if (/^\d+$/.test(url)) {
-    setMsg('USB 카메라는 웹에서 직접 볼 수 없습니다.', false);
+    setMsg('USB/Webcam 카메라는 웹에서 직접 볼 수 없습니다.', false);
     el.previewImg.src = '';
     return;
   }
@@ -346,12 +367,10 @@ function bindEvents() {
   if (el.btnPreview) el.btnPreview.onclick = applyPreview;
   if (el.btnSetActive) el.btnSetActive.onclick = setActiveProfile;
 
-  // 모드 변경 시 UI 즉시 전환
   if (el.controlMode) {
     el.controlMode.onchange = updateModeUI;
   }
 
-  // 체크박스 변경 시 즉시 DB 반영
   if (el.isActive) {
     el.isActive.onchange = handleActiveStatusChange;
   }
@@ -364,4 +383,5 @@ function bindEvents() {
 // 초기 실행
 bindEvents();
 clearForm();
-await loadProfiles();
+// 프로필과 하드웨어 목록을 병렬로 로드
+await Promise.all([loadProfiles(), loadHardwareProfiles()]);
