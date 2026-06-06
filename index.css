@@ -24,7 +24,6 @@ body {
   overflow-x: hidden;
 }
 
-/* 배경 애니메이션 효과 */
 .bg-glow {
   position: fixed;
   top: 0;
@@ -50,14 +49,12 @@ body {
   100% { transform: translate(100px, 100px); }
 }
 
-/* Layout */
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
 }
 
-/* Hero Section */
 .hero {
   height: 100vh;
   display: flex;
@@ -105,7 +102,6 @@ body {
   background: #2563eb;
 }
 
-/* Features Section */
 .features {
   padding: 8rem 0;
 }
@@ -118,7 +114,6 @@ body {
 
 .feature-grid {
   display: grid;
-  /* 6개 카드가 있을 때 가독성을 위해 최소 너비를 350px로 설정 */
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 2rem;
 }
@@ -159,11 +154,9 @@ body {
   color: var(--text-dim);
   font-size: 1rem;
   line-height: 1.6;
-  /* 중요: 한글 단어가 잘리지 않고 단어 단위로 줄바꿈되어 가독성 향상 */
   word-break: keep-all;
 }
 
-/* Problem & Solution Section */
 .problem-solution {
   padding: 6rem 0;
 }
@@ -193,9 +186,9 @@ body {
   margin-bottom: 1.5rem;
   font-size: 1.1rem;
   display: flex;
-  align-items: flex-start; /* 아이콘과 텍스트 정렬 최적화 */
+  align-items: flex-start;
   gap: 1rem;
-  word-break: keep-all; /* 문제/해결 섹션도 가독성 적용 */
+  word-break: keep-all;
 }
 
 .problem {
@@ -213,7 +206,6 @@ body {
 .solution i { color: #10b981; margin-top: 5px; }
 .solution b { color: #fff; }
 
-/* Footer */
 footer {
   padding: 4rem 0;
   text-align: center;
@@ -222,7 +214,6 @@ footer {
   font-size: 0.9rem;
 }
 
-/* UI Elements */
 .scroll-indicator {
   position: absolute;
   bottom: 30px;
@@ -271,7 +262,6 @@ footer {
   border-color: var(--accent);
 }
 
-/* Responsive adjustment */
 @media (max-width: 768px) {
   .hero h1 { font-size: 2.5rem; }
   .hero p { font-size: 1rem; }

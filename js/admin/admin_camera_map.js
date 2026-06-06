@@ -1,6 +1,8 @@
 /**
  * @file admin_camera_map.js
- * @description 카메라와 노드/엣지 간의 매핑을 관리하는 관리자 로직
+ * @version 1.2.11
+ * @description 지도 클릭 시 navigation_elements.id를 조회하여 
+ *              camera_node_map.node_status_id에 저장하는 로직 완성
  */
 
 import { protectPage } from '../../js/admin/common/adminRouterGuard.js';
@@ -32,9 +34,10 @@ const el = {
 };
 
 // --- State Management ---
-let editId = null; // camera_node_map의 PK
+let editId = null; 
 let selectedNodeId = null;
 let selectedEdgeId = null;
+let selectedNavId = null; // ★ 반드시 navigation_elements.id를 담아야 함
 
 let buildings = [];
 let floors = [];
@@ -67,43 +70,47 @@ function isIndoor() {
   return el.nodeScope.value === 'indoor';
 }
 
-// --- Map Initialization 수정 ---
+// ★ 핵심 추가: 클릭한 물리 ID를 기반으로 navigation_elements.id를 찾아오는 함수
+async function fetchNavElementId(type, rawId) {
+  const scope = isIndoor() ? 'indoor' : 'outdoor';
+  // target_type이 node면 element_type도 node, edge면 edge
+  const elType = el.targetType.value; 
+  
+  const { data, error } = await supabase
+    .from('navigation_elements')
+    .select('id')
+    .eq('scope', scope)
+    .eq('element_type', elType)
+    .eq('source_table', scope === 'indoor' ? (elType === 'node' ? 'indoor_nodes' : 'indoor_edges') : (elType === 'node' ? 'outdoor_nodes' : 'outdoor_edges'))
+    .eq('elements_id', rawId)
+    .maybeSingle();
 
+  if (error) {
+    console.error("Error fetching Nav ID:", error);
+    return null;
+  }
+  return data ? data.id : null;
+}
+
+// --- Map Initialization ---
 function initIndoorMap() {
   if (indoorMap) return;
   try {
-    indoorMap = L.map('indoor-map', {
-      crs: L.CRS.Simple,
-      zoomControl: true,
-      attributionControl: false
-    });
+    indoorMap = L.map('indoor-map', { crs: L.CRS.Simple, zoomControl: true, attributionControl: false });
     indoorMap.setView([0, 0], 1);
-    
     indoorNodeLayer = L.layerGroup().addTo(indoorMap);
     indoorEdgeLayer = L.layerGroup().addTo(indoorMap);
-    
-    // 이미지 레이어 생성 시 클릭 이벤트가 레이어를 통과하도록 설정
     indoorImageLayer = L.imageOverlay('', [[0, 0], [1000, 1000]]);
     indoorImageLayer.addTo(indoorMap);
-    
-    // 핵심: 이미지 레이어가 클릭 이벤트를 가로채지 않도록 처리
     indoorImageLayer.getElement().style.pointerEvents = 'none'; 
-
     console.log("✅ Indoor map initialized.");
-  } catch (e) {
-    console.error("❌ Failed to initialize indoor map:", e);
-    indoorMap = null;
-  }
+  } catch (e) { console.error("❌ Failed to initialize indoor map:", e); indoorMap = null; }
 }
-
 
 function initOutdoorMap() {
   if (outdoorMap) return;
   outdoorMap = L.map('outdoor-map').setView([37.5665, 126.9780], 16);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-    maxZoom: 20,
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(outdoorMap);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 20, attribution: '&copy; OpenStreetMap' }).addTo(outdoorMap);
   outdoorNodeLayer = L.layerGroup().addTo(outdoorMap);
   outdoorEdgeLayer = L.layerGroup().addTo(outdoorMap);
 }
@@ -111,38 +118,19 @@ function initOutdoorMap() {
 function toggleScopePanels() {
   const indoor = isIndoor();
   if (indoor) {
-    el.outdoorContainer.style.display = 'none';
-    el.indoorContainer.style.display = 'block';
-    setTimeout(() => {
-      if (!indoorMap) initIndoorMap();
-      if (indoorMap) {
-        indoorMap.invalidateSize();
-        if (el.floorId.value) loadIndoorData();
-      }
-    }, 250);
+    el.outdoorContainer.style.display = 'none'; el.indoorContainer.style.display = 'block';
+    setTimeout(() => { if (!indoorMap) initIndoorMap(); if (indoorMap) { indoorMap.invalidateSize(); if (el.floorId.value) loadIndoorData(); } }, 250);
   } else {
-    el.indoorContainer.style.display = 'none';
-    el.outdoorContainer.style.display = 'block';
+    el.indoorContainer.style.display = 'none'; el.outdoorContainer.style.display = 'block';
     setTimeout(() => { if (outdoorMap) outdoorMap.invalidateSize(); }, 250);
   }
 }
 
 // --- Data Loading ---
 async function loadCameras() {
-  // [수정됨] schema에 맞춰 'name' 대신 'camera_name'을 선택합니다.
-  const { data, error } = await supabase
-    .from('camera_profiles')
-    .select('camera_id, camera_name')
-    .order('camera_id', { ascending: true });
-
-  if (error) {
-    console.error('[Error] loadCameras:', error);
-    return setStatus(`Camera load failed: ${error.message}`, false);
-  }
-
-  el.cameraId.innerHTML = (data || []).map(c => 
-    `<option value="${c.camera_id}">${c.camera_id}${c.camera_name ? ` (${c.camera_name})` : ''}</option>`
-  ).join('');
+  const { data, error } = await supabase.from('camera_profiles').select('camera_id, camera_name').order('camera_id', { ascending: true });
+  if (error) return setStatus(`Camera load failed: ${error.message}`, false);
+  el.cameraId.innerHTML = (data || []).map(c => `<option value="${c.camera_id}">${c.camera_id}${c.camera_name ? ` (${c.camera_name})` : ''}</option>`).join('');
 }
 
 async function loadBuildingsFloors() {
@@ -151,8 +139,7 @@ async function loadBuildingsFloors() {
     supabase.from('floors').select('id,building_id,floor_number,map_image_url').order('id')
   ]);
   if (bRes.error || fRes.error) return setStatus('Building/Floor load failed', false);
-  buildings = bRes.data || [];
-  floors = fRes.data || [];
+  buildings = bRes.data || []; floors = fRes.data || [];
   el.buildingId.innerHTML = '<option value="">건물 선택</option>' + buildings.map(b => `<option value="${b.id}">${b.id} - ${b.name}</option>`).join('');
 }
 
@@ -164,172 +151,103 @@ function renderFloorOptions(buildingId) {
 async function loadIndoorData() {
   const floorId = Number(el.floorId.value);
   if (!indoorMap || !indoorNodeLayer || !indoorEdgeLayer) return;
-
-  if (!floorId) {
-    indoorNodes = [];
-    indoorEdges = [];
-    if (indoorImageLayer) indoorImageLayer.setUrl('');
-    indoorNodeLayer.clearLayers();
-    indoorEdgeLayer.clearLayers();
-    return;
-  }
-
+  if (!floorId) { indoorNodes = []; indoorEdges = []; if (indoorImageLayer) indoorImageLayer.setUrl(''); indoorNodeLayer.clearLayers(); indoorEdgeLayer.clearLayers(); return; }
   const floor = floors.find(f => Number(f.id) === floorId);
   if (floor && floor.map_image_url) {
     indoorImageLayer.off('load'); 
     indoorImageLayer.setUrl(floor.map_image_url);
-    indoorImageLayer.on('load', () => {
-      indoorMap.invalidateSize();
-      indoorMap.fitBounds([[0, 0], [1000, 1000]]);
-    });
-    setTimeout(() => {
-        if (indoorImageLayer._url && indoorMap.getBounds().equals([[0,0],[0,0]])) {
-             indoorMap.invalidateSize();
-             indoorMap.fitBounds([[0, 0], [1000, 1000]]);
-        }
-    }, 500);
+    indoorImageLayer.on('load', () => { indoorMap.invalidateSize(); indoorMap.fitBounds([[0, 0], [1000, 1000]]); });
+    setTimeout(() => { if (indoorImageLayer._url && indoorMap.getBounds().equals([[0,0],[0,0]])) { indoorMap.invalidateSize(); indoorMap.fitBounds([[0, 0], [1000, 1000]]); } }, 500);
   }
-
   const [nRes, eRes] = await Promise.all([
     supabase.from('indoor_nodes').select('*').eq('floor_id', floorId),
     supabase.from('indoor_edges').select('*')
   ]);
-
-  if (nRes.error || eRes.error) {
-    setStatus('Indoor data load failed', false);
-    return;
-  }
-
+  if (nRes.error || eRes.error) return setStatus('Indoor data load failed', false);
   indoorNodes = nRes.data || [];
   const nodeIdSet = new Set(indoorNodes.map(n => n.id));
   indoorEdges = (eRes.data || []).filter(e => nodeIdSet.has(e.from_node) && nodeIdSet.has(e.to_node));
-
   renderIndoorLayers();
 }
 
-
-// --- renderIndoorLayers 수정 (이벤트 바인딩 강화) ---
-
 function renderIndoorLayers() {
   if (!indoorNodeLayer || !indoorEdgeLayer) return;
-  indoorNodeLayer.clearLayers();
-  indoorEdgeLayer.clearLayers();
-
+  indoorNodeLayer.clearLayers(); indoorEdgeLayer.clearLayers();
   if (indoorEdges.length > 0) {
-    const nodeMap = {};
-    indoorNodes.forEach(n => { nodeMap[n.id] = n; });
-
+    const nodeMap = {}; indoorNodes.forEach(n => { nodeMap[n.id] = n; });
     indoorEdges.forEach(e => {
-      const startNode = nodeMap[e.from_node];
-      const endNode = nodeMap[e.to_node];
-
+      const startNode = nodeMap[e.from_node], endNode = nodeMap[e.to_node];
       if (startNode && endNode) {
-        // 좌표 순서 확인: [y, x] 순서인지 데이터 확인 필요
-        const edgeLine = L.polyline([[startNode.y, startNode.x], [endNode.y, endNode.x]], {
-          color: '#ef4444',
-          weight: 5, // 클릭 영역 확보를 위해 조금 더 두껍게
-          opacity: 0.7,
-          lineJoin: 'round'
-        }).addTo(indoorEdgeLayer);
-
-        edgeLine.on('click', (ev) => {
-          // Leaflet 전용 이벤트 전파 중단 사용
+        const edgeLine = L.polyline([[startNode.y, startNode.x], [endNode.y, endNode.x]], { color: '#ef4444', weight: 5, opacity: 0.7, lineJoin: 'round' }).addTo(indoorEdgeLayer);
+        edgeLine.on('click', async (ev) => { 
           L.DomEvent.stopPropagation(ev); 
-          
-          if (!isIndoor() || el.targetType.value !== 'edge') return;
-          
-          selectedEdgeId = e.id;
-          selectedNodeId = null;
-          syncSelectedTargetInput();
-          setStatus(`Indoor Edge 선택됨: ${e.id}`);
-          console.log("✅ Indoor Edge Clicked:", e.id);
+          if (!isIndoor() || el.targetType.value !== 'edge') return; 
+          selectedEdgeId = e.id; selectedNodeId = null; 
+          // ★ 핵심: 클릭 시 navigation_elements.id를 찾아 할당
+          selectedNavId = await fetchNavElementId('edge', e.id); 
+          syncSelectedTargetInput(); 
+          setStatus(`Indoor Edge 선택됨: ${e.id}`); 
         });
       }
     });
   }
-
   indoorNodes.forEach(n => {
-    const marker = L.circleMarker([n.y, n.x], {
-      radius: 8, // 클릭하기 쉽도록 반지름 확대
-      color: '#10b981',
-      fillColor: '#10b981',
-      fillOpacity: 0.9,
-      weight: 2
-    }).addTo(indoorNodeLayer);
-
+    const marker = L.circleMarker([n.y, n.x], { radius: 8, color: '#10b981', fillColor: '#10b981', fillOpacity: 0.9, weight: 2 }).addTo(indoorNodeLayer);
     marker.bindTooltip(`Node ${n.id}`, { direction: 'top', offset: [0, -5] });
-    
-    marker.on('click', (ev) => {
-      // Leaflet 전용 이벤트 전파 중단 사용
-      L.DomEvent.stopPropagation(ev);
-
-      if (!isIndoor() || el.targetType.value !== 'node') return;
-      
-      selectedNodeId = n.id;
-      selectedEdgeId = null;
-      syncSelectedTargetInput();
-      setStatus(`Indoor Node 선택됨: ${n.id}`);
-      console.log("✅ Indoor Node Clicked:", n.id);
+    marker.on('click', async (ev) => { 
+      L.DomEvent.stopPropagation(ev); 
+      if (!isIndoor() || el.targetType.value !== 'node') return; 
+      selectedNodeId = n.id; selectedEdgeId = null; 
+      // ★ 핵심: 클릭 시 navigation_elements.id를 찾아 할당
+      selectedNavId = await fetchNavElementId('node', n.id); 
+      syncSelectedTargetInput(); 
+      setStatus(`Indoor Node 선택됨: ${n.id}`); 
     });
   });
 }
 
-
 async function loadOutdoorData() {
-  const [nRes, eRes] = await Promise.all([
-    supabase.from('outdoor_nodes').select('*'),
-    supabase.from('outdoor_edges').select('*')
-  ]);
-  outdoorNodes = nRes.data || [];
-  outdoorEdges = eRes.data || [];
+  const [nRes, eRes] = await Promise.all([supabase.from('outdoor_nodes').select('*'), supabase.from('outdoor_edges').select('*')]);
+  outdoorNodes = nRes.data || []; outdoorEdges = eRes.data || [];
   drawOutdoorLayers();
 }
 
 function drawOutdoorLayers() {
-  outdoorNodeLayer.clearLayers();
-  outdoorEdgeLayer.clearLayers();
-  const nodeMap = {};
-  outdoorNodes.forEach(n => { nodeMap[n.id] = n; });
-
+  outdoorNodeLayer.clearLayers(); outdoorEdgeLayer.clearLayers();
+  const nodeMap = {}; outdoorNodes.forEach(n => { nodeMap[n.id] = n; });
   outdoorNodes.forEach(n => {
-    L.circleMarker([n.lat, n.lng], { radius: 6, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.9 })
-     .addTo(outdoorNodeLayer)
-     .on('click', () => {
-       if (el.nodeScope.value !== 'outdoor' || el.targetType.value !== 'node') return;
-       selectedNodeId = n.id; selectedEdgeId = null; syncSelectedTargetInput();
-       setStatus(`Node ${n.id} selected`);
-     });
+    L.circleMarker([n.lat, n.lng], { radius: 6, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.9 }).addTo(outdoorNodeLayer).on('click', async () => { 
+      if (el.nodeScope.value !== 'outdoor' || el.targetType.value !== 'node') return; 
+      selectedNodeId = n.id; selectedEdgeId = null; 
+      // ★ 핵심: 클릭 시 navigation_elements.id를 찾아 할당
+      selectedNavId = await fetchNavElementId('node', n.id); 
+      syncSelectedTargetInput(); 
+      setStatus(`Node ${n.id} selected`); 
+    });
   });
-
   outdoorEdges.forEach(e => {
     const a = nodeMap[e.from_node], b = nodeMap[e.to_node];
     if (!a || !b) return;
-    L.polyline([[a.lat, a.lng], [b.lat, b.lng]], { color: '#f59e0b', weight: 4 })
-     .addTo(outdoorEdgeLayer)
-     .on('click', () => {
-       if (el.nodeScope.value !== 'outdoor' || el.targetType.value !== 'edge') return;
-       selectedEdgeId = e.id; selectedNodeId = null; syncSelectedTargetInput();
-       setStatus(`Edge ${e.id} selected`);
-     });
+    L.polyline([[a.lat, a.lng], [b.lat, b.lng]], { color: '#f59e0b', weight: 4 }).addTo(outdoorEdgeLayer).on('click', async () => { 
+      if (el.nodeScope.value !== 'outdoor' || el.targetType.value !== 'edge') return; 
+      selectedEdgeId = e.id; selectedNodeId = null; 
+      // ★ 핵심: 클릭 시 navigation_elements.id를 찾아 할당
+      selectedNavId = await fetchNavElementId('edge', e.id); 
+      syncSelectedTargetInput(); 
+      setStatus(`Edge ${e.id} selected`); 
+    });
   });
-
   if (outdoorNodes.length) outdoorMap.fitBounds(L.latLngBounds(outdoorNodes.map(n => [n.lat, n.lng])).pad(0.2));
 }
 
 // --- CRUD Operations ---
 async function loadMappings() {
-  const { data, error } = await supabase
-    .from('camera_node_map')
-    .select('*, floors(floor_number)')
-    .order('updated_at', { ascending: false });
-
+  const { data, error } = await supabase.from('camera_node_map').select('*, floors(floor_number)').order('updated_at', { ascending: false });
   if (error) return setStatus('Load failed', false);
   mappings = data || [];
   el.mappingCount.textContent = mappings.length;
-
   const collator = new Intl.Collator('ko', { numeric: true });
   mappings.sort((a, b) => collator.compare(a.floors?.floor_number ?? 0, b.floors?.floor_number ?? 0));
-
   el.mapList.innerHTML = mappings.map(m => {
     const target = m.target_type === 'node' ? `node:${m.node_id ?? '-'}` : `edge:${m.edge_id ?? '-'}`;
     const floorLabel = m.floors?.floor_number ? `${m.floors.floor_number}F` : '-';
@@ -338,7 +256,6 @@ async function loadMappings() {
       <div class="item-meta"><span>${target}</span><span>|</span><span>${floorLabel}</span></div >
     </div >`;
   }).join('');
-
   el.mapList.querySelectorAll('.item').forEach(node => {
     node.onclick = async () => {
       const m = mappings.find(x => x.id === Number(node.dataset.id));
@@ -349,6 +266,7 @@ async function loadMappings() {
       el.nodeScope.value = m.node_scope;
       selectedNodeId = m.node_id ?? null;
       selectedEdgeId = m.edge_id ?? null;
+      selectedNavId = m.node_status_id; // ★ 중요: node_status_id에 저장된 NavID를 로드
       syncSelectedTargetInput();
       if (m.building_id) { el.buildingId.value = String(m.building_id); renderFloorOptions(m.building_id); }
       if (m.floor_id) { el.floorId.value = String(m.floor_id); await loadIndoorData(); }
@@ -368,6 +286,7 @@ async function saveMapping() {
     camera_id, target_type, node_scope,
     node_id: target_type === 'node' ? Number(selected) : null,
     edge_id: target_type === 'edge' ? Number(selected) : null,
+    node_status_id: selectedNavId, // ★ 핵심: navigation_elements.id를 저장
     building_id: node_scope === 'indoor' && el.buildingId.value ? Number(el.buildingId.value) : null,
     floor_id: node_scope === 'indoor' && el.floorId.value ? Number(el.floorId.value) : null,
     updated_at: new Date().toISOString()
@@ -392,51 +311,26 @@ async function deleteMapping() {
 }
 
 function clearForm() {
-  editId = null; selectedNodeId = null; selectedEdgeId = null;
-  el.targetType.value = 'node';
-  el.nodeScope.value = 'outdoor';
-  el.selectedTarget.value = '';
-  el.buildingId.value = '';
-  el.floorId.innerHTML = '<option value="">층 선택</option>';
-  setStatus('ready');
-  toggleScopePanels();
+  editId = null; selectedNodeId = null; selectedEdgeId = null; selectedNavId = null;
+  el.targetType.value = 'node'; el.nodeScope.value = 'outdoor';
+  el.selectedTarget.value = ''; el.buildingId.value = ''; el.floorId.innerHTML = '<option value="">층 선택</option>';
+  setStatus('ready'); toggleScopePanels();
 }
 
-// --- Initialization ---
 function bindEvents() {
   el.btnNew.onclick = clearForm;
   el.btnSave.onclick = saveMapping;
   el.btnDelete.onclick = deleteMapping;
-  el.nodeScope.onchange = () => {
-    selectedNodeId = null; selectedEdgeId = null; syncSelectedTargetInput();
-    toggleScopePanels();
-  };
-  el.targetType.onchange = () => {
-    selectedNodeId = null; selectedEdgeId = null; syncSelectedTargetInput();
-  };
-  el.buildingId.onchange = () => {
-    renderFloorOptions(el.buildingId.value);
-    el.floorId.value = '';
-    if (el.nodeScope.value === 'indoor') {
-      indoorNodes = []; indoorEdges = [];
-      if (indoorNodeLayer) indoorNodeLayer.clearLayers();
-      if (indoorEdgeLayer) indoorEdgeLayer.clearLayers();
-    }
-  };
+  el.nodeScope.onchange = () => { selectedNodeId = null; selectedEdgeId = null; selectedNavId = null; syncSelectedTargetInput(); toggleScopePanels(); };
+  el.targetType.onchange = () => { selectedNodeId = null; selectedEdgeId = null; selectedNavId = null; syncSelectedTargetInput(); };
+  el.buildingId.onchange = () => { renderFloorOptions(el.buildingId.value); el.floorId.value = ''; if (el.nodeScope.value === 'indoor') { indoorNodes = []; indoorEdges = []; if (indoorNodeLayer) indoorNodeLayer.clearLayers(); if (indoorEdgeLayer) indoorEdgeLayer.clearLayers(); } };
   el.floorId.onchange = async () => { if (indoorMap) await loadIndoorData(); };
 }
 
 async function init() {
-  bindEvents();
-  initOutdoorMap();
-  await Promise.all([
-    loadCameras(),
-    loadBuildingsFloors(),
-    loadOutdoorData(),
-    loadMappings()
-  ]);
-  clearForm();
-  setStatus('Initialized');
+  bindEvents(); initOutdoorMap();
+  await Promise.all([loadCameras(), loadBuildingsFloors(), loadOutdoorData(), loadMappings()]);
+  clearForm(); setStatus('Initialized');
 }
 
 init();

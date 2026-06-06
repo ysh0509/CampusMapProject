@@ -15,18 +15,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 순차적 페이드인
     setTimeout(() => {
-        heroTitle.style.opacity = '1';
-        heroTitle.style.transform = 'translateY(0)';
+        if (heroTitle) {
+            heroTitle.style.opacity = '1';
+            heroTitle.style.transform = 'translateY(0)';
+        }
     }, 200);
 
     setTimeout(() => {
-        heroDesc.style.opacity = '1';
-        heroDesc.style.transform = 'translateY(0)';
+        if (heroDesc) {
+            heroDesc.style.opacity = '1';
+            heroDesc.style.transform = 'translateY(0)';
+        }
     }, 500);
 
     setTimeout(() => {
-        ctaBtn.style.opacity = '1';
-        ctaBtn.style.transform = 'translateY(0)';
+        if (ctaBtn) {
+            ctaBtn.style.opacity = '1';
+            ctaBtn.style.transform = 'translateY(0)';
+        }
     }, 800);
 
     // 2. Intersection Observer for Feature Cards
@@ -49,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     featureCards.forEach((card, index) => {
         card.style.opacity = '0';
         card.style.transform = 'translateY(30px)';
-        card.style.transition = `all 0.6s ease-out ${index * 0.15}s`; // 순차적 애니메이션
+        card.style.transition = `all 0.6s ease-out ${index * 0.15}s`; 
         observer.observe(card);
     });
 
@@ -63,17 +69,20 @@ document.addEventListener('DOMContentLoaded', () => {
             glow.style.transform = `translate(${moveX}px, ${moveY}px)`;
         });
     });
-});
 
-// 4. Smooth Scrolling for Scroll Indicator
-document.querySelector('.scroll-indicator').addEventListener('click', function(e) {
-    e.preventDefault();
-    const targetId = this.getAttribute('href');
-    const targetElement = document.querySelector(targetId);
-    
-    if (targetElement) {
-        targetElement.scrollIntoView({
-            behavior: 'smooth'
+    // 4. Smooth Scrolling for Scroll Indicator
+    const scrollIndicator = document.querySelector('.scroll-indicator');
+    if (scrollIndicator) {
+        scrollIndicator.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetElement = document.querySelector(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth'
+                });
+            }
         });
     }
 });

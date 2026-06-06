@@ -61,7 +61,7 @@ function renderList() {
       </div>
       <div class="item-sub">
         <span><i class="fas fa-network-wired"></i> ${hw.hardware_ip || '-'}</span>
-        <span><i class="fas fa-map-marker-alt"></i> Point: ${hw.target_point || '-'}</span>
+        <span><i class="fas fa-map-marker-alt"></i> Point: ${hw.target_id || '-'}</span>
       </div>
     </div>
   `).join('');
@@ -79,7 +79,7 @@ function selectProfile(id) {
 
   el.hwId.value = hw.hardware_id;
   el.hwIp.value = hw.hardware_ip || '';
-  el.hwTargetPoint.value = hw.target_point || '';
+  el.hwTargetPoint.value = hw.target_id || '';
   el.hwIsActive.value = String(hw.is_active);
 
   renderList(); // active 클래스 업데이트를 위해 재렌더링
