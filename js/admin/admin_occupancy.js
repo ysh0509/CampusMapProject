@@ -1,6 +1,6 @@
 /**
  * @file admin_occupancy.js
- * @description 전역 혼잡도 분석 엔진 (차트는 전체 데이터 기반, 테이블은 필터 기반)
+ * @description 전역 혼잡도 분석 엔진 (차트는 선택된 노드/필터 기반, 테이블은 필터 기반)
  */
 
 import { supabase } from '../../js/admin/common/adminApi.js';
@@ -37,7 +37,7 @@ let eventsPage = 1;
 let totalEvents = 0;
 
 let tableData = [];      // [테이블용] 현재 필터링된 로그 데이터 (최신순)
-let globalChartData = []; // [차트용] 필터와 무관한 전체 노드 집계 데이터 (과거->현재 순)
+let globalChartData = []; // [차트용] 선택된 필터(노드 포함) 조건에 맞는 시계열 데이터 (과거->현재 순)
 
 let occupancyChart = null;
 
@@ -220,7 +220,7 @@ async function loadTableEvents() {
   const { data, error, count } = await query;
   if (error) {
     console.error('[Error] loadTableEvents:', error.message);
-    eventsTableBody.innerHTML = `<tr><td colspan="8" style="color:red;">로드 실패</td</tr>`;
+    eventsTableBody.innerHTML = `<tr><td colspan="8" style="color:red;">로드 실패</td></tr>`;
     return;
   }
 
@@ -237,7 +237,7 @@ async function loadTableEvents() {
  */
 function updateTableUI(data) {
   if (!data || data.length === 0) {
-    eventsTableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">데이터 없음</td</tr>`;
+    eventsTableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;">데이터 없음</td></tr>`;
     return;
   }
 
@@ -256,18 +256,23 @@ function updateTableUI(data) {
 }
 
 /**
- * [차트용] 전체 데이터 로드 (필터 무시)
- * 차트가 '전체'를 보여주기 위해 필터 조건 없이 데이터를 가져옴
+ * [차트용] 필터가 적용된 시계열 데이터 로드
+ * 수정 사항: 노드(node_id) 필터가 차트 데이터에도 적용되도록 변경됨
  */
 async function loadGlobalChartData() {
-  console.log('[Chart] 전체 데이터 동기화 중...');
+  console.log('[Chart] 차트 데이터 필터링 및 동기화 중...');
   try {
     let query = supabase
       .from('occupancy_events')
       .select('*')
       .order('captured_at', { ascending: true });
 
-    // 기간 필터 적용 (차트 시계열을 위해)
+    // 1. [중요] 노드 필터 적용 (카메라별 차트 제어의 핵심)
+    if (filterEventsNode.value !== 'all') {
+      query = query.eq('node_id', filterEventsNode.value);
+    }
+
+    // 2. 기간 필터 적용 (차트 시계열을 위해)
     const range = filterDateRange.value;
     const now = new Date();
     if (range === '7') {
@@ -284,7 +289,7 @@ async function loadGlobalChartData() {
 
     globalChartData = data || [];
     updateChart(globalChartData, filterAnalysisDimension.value, filterChartType.value);
-    console.log(`[Chart] ${globalChartData.length}건 데이터 동기화 완료`);
+    console.log(`[Chart] ${globalChartData.length}건 데이터 동기화 완료 (Node: ${filterEventsNode.value})`);
   } catch (err) {
     console.error('[Chart Error]', err.message);
   }
@@ -301,7 +306,12 @@ btnRefreshAnalysis.onclick = async () => {
 };
 
 // 필터 변경 시
-filterEventsNode.onchange = () => { eventsPage = 1; loadTableEvents(); };
+filterEventsNode.onchange = () => { 
+  eventsPage = 1; 
+  // 노드가 바뀌면 테이블과 차트 모두 해당 노드 데이터로 새로고침
+  Promise.all([loadTableEvents(), loadGlobalChartData()]); 
+};
+
 filterEventsScope.onchange = () => { eventsPage = 1; loadTableEvents(); };
 filterEventsLevel.onchange = () => { eventsPage = 1; loadTableEvents(); };
 
@@ -347,6 +357,7 @@ btnNextEvents.onclick = () => {
       if (eventsPage === 1) {
         await loadTableEvents();
       }
+      // 차트의 경우 현재 적용된 필터(노드 등)를 유지하며 동기화
       await loadGlobalChartData();
     } catch (err) {
       console.error('[Auto-Refresh Error]', err.message);
