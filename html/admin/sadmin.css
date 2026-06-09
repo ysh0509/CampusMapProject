@@ -1,169 +1,397 @@
-/* superadmin.css (또는 HTML 내 style 태그) */
 :root {
-  --bg-main: #0f172a;
-  --bg-card: rgba(30, 41, 59, 0.7);
+  --sidebar-width: 260px;
+  --bg-color: #0f172a;
+  --sidebar-bg: #1e293b;
+  --accent-color: #3b82f6;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --accent-primary: #3b82f6;
-  --accent-danger: #ef4444;
-  --accent-success: #10b981;
-  --border-color: rgba(255, 255, 255, 0.1);
-  --glass-blur: blur(12px);
+  --card-bg: #1e293b;
+  --border-color: #334155;
+  --status-active: #22c55e;
+  --status-block: #ef4444;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: 'Pretendard', sans-serif;
-}
-
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  background-color: var(--bg-main);
+  font-family: 'Inter', -apple-system, sans-serif;
+  background-color: var(--bg-color);
   color: var(--text-primary);
-  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Layout Structure */
-.main-container {
-  flex: 1;
-  padding: 40px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-header {
-  margin-bottom: 40px;
+.admin-layout {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  min-height: 100vh;
 }
 
-header h1 {
-  font-size: 2rem;
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100vh;
+  z-index: 100;
+}
+
+.sidebar-header {
+  padding: 2rem 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  background: linear-gradient(to right, #fff, #94a3b8);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--accent-color);
 }
 
-/* Dashboard Cards */
+.sidebar-nav {
+  flex: 1;
+  padding: 0 0.75rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 1rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: 8px;
+  margin-bottom: 4px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.nav-item i { width: 20px; font-size: 1.1rem; }
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--accent-color);
+  color: white;
+}
+
+.sidebar-footer {
+  padding: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-logout {
+  width: 100%;
+  padding: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-logout:hover { background: #ef4444; color: white; }
+
+/* Main Content Area */
+.content-area {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  padding: 2rem;
+}
+
+.admin-section {
+  display: none; /* SPA 전환을 위해 기본 숨김 */
+  animation: fadeIn 0.3s ease;
+}
+
+.admin-section.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section-header { margin-bottom: 2rem; }
+.section-header h1 { font-size: 1.8rem; font-weight: 700; }
+
+/* Cards & Grid */
 .grid-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 24px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .card {
-  background: var(--bg-card);
-  backdrop-filter: var(--glass-blur);
+  background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
 }
 
 .card h2 {
-  font-size: 1.25rem;
-  margin-bottom: 20px;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   gap: 10px;
   color: var(--text-secondary);
 }
 
-/* Form Elements */
-.input-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 10px;
-}
+/* Table Styles */
+.table-card { margin-top: 1.5rem; }
+.table-responsive { overflow-x: auto; }
 
-input, select {
-  flex: 1;
-  min-width: 180px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid var(--border-color);
-  padding: 12px 16px;
-  border-radius: 10px;
-  color: white;
-  outline: none;
-  transition: border 0.2s;
-}
-
-input:focus, select:focus {
-  border-color: var(--accent-primary);
-}
-
-button {
-  padding: 12px 24px;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: none;
-}
-
-.btn-primary {
-  background: var(--accent-primary);
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #2563eb;
-  transform: translateY(-1px);
-}
-
-.btn-danger {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--accent-danger);
-  border: 1px solid var(--accent-danger);
-}
-
-.btn-danger:hover {
-  background: var(--accent-danger);
-  color: white;
-}
-
-/* Table Styling */
 table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 8px;
+  border-collapse: collapse;
+  text-align: left;
 }
 
 th {
-  text-align: left;
-  padding: 12px 16px;
+  padding: 12px;
+  border-bottom: 2px solid var(--border-color);
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.5px;
 }
 
 td {
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
 }
 
-td:first-child { border-radius: 12px 0 0 12px; }
-td:last-child { border-radius: 0 12px 12px 0; }
+/* Status Buttons (The Requested Design) */
+.mgmt-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
 
-/* Badges */
-.badge {
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 11px;
+.toggle-status-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 50px;
+  font-size: 0.75rem;
   font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: white;
   text-transform: uppercase;
 }
 
-.badge-admin { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-.badge-superadmin { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.btn-status-active {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+}
+.btn-status-active:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(34, 197, 94, 0.4);
+}
 
-@media (max-width: 768px) {
-  .main-container { padding: 20px; }
-  .grid-layout { grid-template-columns: 1fr; }
+.btn-status-block {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+.btn-status-block:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 15px rgba(239, 68, 68, 0.4);
+}
+
+/* Filter UI */
+.filter-card { margin-bottom: 1.5rem; }
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+}
+.filter-item { display: flex; flex-direction: column; gap: 8px; }
+.filter-item label { font-size: 0.8rem; color: var(--text-secondary); }
+.filter-item select, .filter-item input {
+  padding: 8px 12px;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  color: white;
+  border-radius: 6px;
+}
+.filter-actions { display: flex; gap: 10px; }
+
+/* Badges & Helpers */
+.badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+.badge-admin { background: #3b82f6; color: white; }
+.badge-superadmin { background: #a855f7; color: white; }
+.log-action { background: rgba(255,255,255,0.1); }
+.email-cell { font-weight: 500; }
+.date-cell { color: var(--text-secondary); font-size: 0.85rem; }
+
+/* Buttons */
+.btn-primary { background: var(--accent-color); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.btn-secondary { background: var(--border-color); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+.btn-danger { background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; }
+
+/* Input Group */
+.input-group { display: flex; flex-direction: column; gap: 12px; }
+.input-group input, .input-group select {
+  padding: 10px;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  color: white;
+  border-radius: 6px;
+}
+
+/* --- System Summary (Stats Card) 스타일 추가 --- */
+
+.stats-container {
+  display: flex;
+  justify-content: space-around; /* 아이템 간격을 균등하게 배분 */
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 2.2rem; /* 숫자를 크게 강조 */
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Events Today(로그 수) 숫자에 포인트 컬러 적용 (선택 사항) */
+#total-logs {
+  color: #ef4444; /* 빨간색 계열로 강조 */
+}
+
+/* 모바일 대응: 화면이 작아지면 세로로 배치 */
+@media (max-width: 480px) {
+  .stats-container {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .stat-item {
+    width: 100%;
+  }
+}
+
+/* --- Management Column Layout & Buttons --- */
+
+/* 1. 관리 도구들을 한 줄로 정렬하는 컨테이너 */
+.mgmt-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* 오른쪽 정렬 */
+  gap: 10px;                /* 버튼 사이 간격 */
+}
+
+/* 2. 상태 토글 버튼 (Active / Block) 디자인 */
+.toggle-status-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;                 /* 아이콘과 글자 사이 간격 */
+  padding: 6px 14px;
+  border: none;
+  border-radius: 50px;      /* 알약 모양 */
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Active 상태: 초록색 그라데이션 + 글로우 효과 */
+.btn-status-active {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+}
+.btn-status-active:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(34, 197, 94, 0.4);
+}
+
+/* Block 상태: 빨간색 그라데이션 + 글로우 효과 */
+.btn-status-block {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+.btn-status-block:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(239, 68, 68, 0.4);
+}
+
+/* 버튼 클릭 시 눌리는 효과 */
+.toggle-status-btn:active {
+  transform: translateY(0);
+}
+
+/* 3. 권한 선택 Select 박스 디자인 */
+.role-select {
+  background: var(--bg-color);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+}
+.role-select:focus {
+  border-color: var(--accent-color);
+}
+
+/* 4. 삭제 버튼 디자인 */
+.delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: rgba(239, 68, 68, 0.1); /* 투명한 빨간색 배경 */
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.delete-btn:hover {
+  background: #ef4444;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* 5. 테이블 셀 보정 */
+.mgmt-row i {
+  font-size: 0.9rem;
 }

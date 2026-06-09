@@ -10,89 +10,142 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Super Admin | Smart Campus</title>
-  <link rel="stylesheet" href="sadmin.css"> <!-- 상기 CSS 적용 -->
+  <link rel="stylesheet" href="sadmin.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
   <div id="admin-header"></div>
-  <div class="main-container">
-    <header>
-      <h1><i class="fas fa-shield-halved"></i> Super Admin Dashboard</h1>
-      <button class="btn-danger" onclick="location.href='/index.html'">
-        <i class="fas fa-arrow-left"></i> Exit Dashboard
-      </button>
-    </header>
 
-    <!-- Section 1: Admin Management -->
-    <div class="grid-layout">
-      <!-- Admin Creation Card -->
-      <section class="card">
-        <h2><i class="fas fa-user-plus"></i> Create New Administrator</h2>
-        <div class="input-group">
-          <input type="email" id="new-email" placeholder="Email Address" />
-          <input type="password" id="new-password" placeholder="Password" />
-          <select id="new-role">
-            <option value="admin">Admin Role</option>
-            <option value="superadmin">Super Admin Role</option>
-          </select>
-          <button id="create-admin-btn" class="btn-primary">Generate Account</button>
+  <div class="admin-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <i class="fas fa-shield-halved"></i>
+        <span>Super Admin</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-target="admin-management">
+          <i class="fas fa-user-gear"></i> Administrator Management
+        </a>
+        <a href="#" class="nav-item" data-target="admin-logs">
+          <i class="fas fa-clipboard-list"></i> System Audit Logs
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-logout" onclick="location.href='/index.html'">
+          <i class="fas fa-sign-out-alt"></i> Exit Dashboard
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+      
+      <!-- Section 1: Administrator Management -->
+      <section id="admin-management" class="admin-section active">
+        <header class="section-header">
+          <h1>Administrator Management</h1>
+        </header>
+
+        <div class="grid-layout">
+          <!-- Create Card -->
+          <section class="card">
+            <h2><i class="fas fa-user-plus"></i> Create New Administrator</h2>
+            <div class="input-group">
+              <input type="email" id="new-email" placeholder="Email Address" />
+              <input type="password" id="new-password" placeholder="Password" />
+              <select id="new-role">
+                <option value="admin">Admin Role</option>
+                <option value="superadmin">Super Admin Role</option>
+              </select>
+              <button id="create-admin-btn" class="btn-primary">Generate Account</button>
+            </div>
+          </section>
+
+          <!-- Stats Card -->
+          <section class="card">
+            <h2><i class="fas fa-chart-pie"></i> System Summary</h2>
+            <div class="stats-container">
+              <div class="stat-item">
+                <div class="stat-value" id="total-admins">0</div>
+                <div class="stat-label">Total Admins</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value" id="total-logs">0</div>
+                <div class="stat-label">Events Today</div>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
 
-      <!-- Stats Summary (신설: UX 개선용) -->
-      <section class="card">
-        <h2><i class="fas fa-chart-pie"></i> System Summary</h2>
-        <div style="display: flex; justify-content: space-around; text-align: center;">
-          <div>
-            <div style="font-size: 1.5rem; font-weight: bold;" id="total-admins">0</div>
-            <div style="color: var(--text-secondary); font-size: 0.8rem;">Total Admins</div>
+        <!-- Admin Table Card -->
+        <section class="card table-card">
+          <h2><i class="fas fa-users"></i> Administrator Directory</h2>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Email Address</th>
+                  <th>Role Level</th>
+                  <th>Account Created</th>
+                  <th style="text-align: right;">Management</th>
+                </tr>
+              </thead>
+              <tbody id="admin-table-body"></tbody>
+            </table>
           </div>
-          <div>
-            <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent-danger);" id="total-logs">0</div>
-            <div style="color: var(--text-secondary); font-size: 0.8rem;">Events Today</div>
+        </section>
+      </section>
+
+      <!-- Section 2: Admin Logs -->
+      <section id="admin-logs" class="admin-section">
+        <header class="section-header">
+          <h1>System Audit Logs</h1>
+        </header>
+
+        <!-- Filter Card -->
+        <section class="card filter-card">
+          <div class="filter-group">
+            <div class="filter-item">
+              <label><i class="fas fa-filter"></i> Action Type</label>
+              <select id="filter-action">
+                <option value="ALL">All Actions</option>
+                <option value="CREATE_ADMIN">Create Admin</option>
+                <option value="DELETE_ADMIN">Delete Admin</option>
+                <option value="ROLE_CHANGE">Role Change</option>
+                <option value="STATUS_CHANGE">Status Change</option>
+              </select>
+            </div>
+            <div class="filter-item">
+              <label><i class="fas fa-calendar"></i> Date</label>
+              <input type="date" id="filter-date" />
+            </div>
+            <div class="filter-actions">
+              <button id="btn-filter-reset" class="btn-secondary">Reset</button>
+              <button id="btn-filter-apply" class="btn-primary">Apply Filter</button>
+            </div>
           </div>
-        </div>
-      </section>
-    </div>
+        </section>
 
-    <!-- Section 2: Tables -->
-    <div class="grid-layout">
-      <!-- Admin List Table -->
-      <section class="card" style="grid-column: span 2;">
-        <h2><i class="fas fa-users"></i> Administrator Directory</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Email Address</th>
-              <th>Role Level</th>
-              <th>Account Created</th>
-              <th style="text-align: right;">Management</th>
-            </tr>
-          </thead>
-          <tbody id="admin-table-body">
-            <!-- JS Injection -->
-          </tbody>
-        </table>
+        <!-- Log Table Card -->
+        <section class="card table-card">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Action</th>
+                  <th>Description</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="log-table-body"></tbody>
+            </table>
+          </div>
+        </section>
       </section>
 
-      <!-- Admin Logs Table -->
-      <section class="card" style="grid-column: span 2;">
-        <h2><i class="fas fa-list-ul"></i> System Audit Logs</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Action Performed</th>
-              <th>Description</th>
-              <th>Timestamp</th>
-            </tr>
-          </thead>
-          <tbody id="log-table-body">
-            <!-- JS Injection -->
-          </tbody>
-        </table>
-      </section>
-    </div>
+    </main>
   </div>
 
   <script type="module" src="/js/admin/sadmin.js"></script>
