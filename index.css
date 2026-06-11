@@ -18,7 +18,12 @@
 
 body {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-  background-color: var(--bg-dark);
+  /* 배경 이미지 적용: 텍스트 가독성을 위해 85% 농도의 다크 오버레이를 먼저 배치합니다. */
+  /* 파일명은 'campus-bg.jpg'로 가정하였으니 실제 파일명으로 수정하여 사용하세요. */
+  background: 
+    linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)), 
+    url('/assets/images/campus-bg.jpg') no-repeat center center fixed;
+  background-size: cover;
   color: var(--text-main);
   line-height: 1.6;
   overflow-x: hidden;
@@ -32,6 +37,7 @@ body {
   height: 100%;
   z-index: -1;
   overflow: hidden;
+  pointer-events: none; /* 배경 효과가 클릭 이벤트를 방해하지 않도록 설정 */
 }
 
 .glow-circle {
@@ -40,7 +46,8 @@ body {
   height: 500px;
   border-radius: 50%;
   filter: blur(120px);
-  opacity: 0.15;
+  /* 배경 이미지와 겹치므로 투명도를 기존보다 낮추어 은은하게 표현합니다. */
+  opacity: 0.1;
   animation: float 20s infinite alternate;
 }
 
@@ -73,6 +80,8 @@ body {
   -webkit-text-fill-color: transparent;
   margin-bottom: 1.5rem;
   letter-spacing: -0.02em;
+  /* 텍스트 그림자를 추가하여 배경 이미지 위에서도 선명도를 극대화합니다. */
+  text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .hero p {
@@ -80,6 +89,7 @@ body {
   color: var(--text-dim);
   max-width: 700px;
   margin-bottom: 2.5rem;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
 .cta-button {
@@ -119,9 +129,11 @@ body {
 }
 
 .feature-card {
-  background: var(--glass-bg);
+  /* 글래스모피즘(Glassmorphism) 효과를 강화하여 배경 이미지 위에서 떠 있는 느낌을 줍니다. */
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--glass-border);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   padding: 2.5rem;
   border-radius: 24px;
   transition: all 0.3s ease;
@@ -171,6 +183,9 @@ body {
   padding: 3rem;
   border-radius: 30px;
   transition: transform 0.3s ease;
+  /* 배경 이미지 위에서 카드가 명확히 구분되도록 배경색을 조정합니다. */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .ps-card h2 {
@@ -192,14 +207,14 @@ body {
 }
 
 .problem {
-  background: rgba(239, 68, 68, 0.05);
+  background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .problem i { color: #ef4444; margin-top: 5px; }
 
 .solution {
-  background: rgba(16, 185, 129, 0.05);
+  background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
@@ -212,6 +227,7 @@ footer {
   border-top: 1px solid var(--glass-border);
   color: var(--text-dim);
   font-size: 0.9rem;
+  background: rgba(15, 23, 42, 0.5); /* 푸터는 배경과 구분되도록 처리 */
 }
 
 .scroll-indicator {
@@ -245,9 +261,10 @@ footer {
   top: 20px;
   right: 20px;
   padding: 10px 20px;
-  background: var(--glass-bg);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: var(--text-dim);
   text-decoration: none;
   border-radius: 12px;
