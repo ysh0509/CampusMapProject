@@ -1,8 +1,8 @@
 /**
  * @file admin_camera_map.js
- * @version 1.2.11
- * @description 지도 클릭 시 navigation_elements.id를 조회하여 
- *              camera_node_map.node_status_id에 저장하는 로직 완성
+ * @version 1.2.13
+ * @description camera_id를 기준으로 중복을 확인하여 
+ *              기존 데이터가 있으면 update, 없으면 insert 수행
  */
 
 import { protectPage } from '../../js/admin/common/adminRouterGuard.js';
@@ -37,7 +37,7 @@ const el = {
 let editId = null; 
 let selectedNodeId = null;
 let selectedEdgeId = null;
-let selectedNavId = null; // ★ 반드시 navigation_elements.id를 담아야 함
+let selectedNavId = null; 
 
 let buildings = [];
 let floors = [];
@@ -70,10 +70,8 @@ function isIndoor() {
   return el.nodeScope.value === 'indoor';
 }
 
-// ★ 핵심 추가: 클릭한 물리 ID를 기반으로 navigation_elements.id를 찾아오는 함수
 async function fetchNavElementId(type, rawId) {
   const scope = isIndoor() ? 'indoor' : 'outdoor';
-  // target_type이 node면 element_type도 node, edge면 edge
   const elType = el.targetType.value; 
   
   const { data, error } = await supabase
@@ -183,7 +181,6 @@ function renderIndoorLayers() {
           L.DomEvent.stopPropagation(ev); 
           if (!isIndoor() || el.targetType.value !== 'edge') return; 
           selectedEdgeId = e.id; selectedNodeId = null; 
-          // ★ 핵심: 클릭 시 navigation_elements.id를 찾아 할당
           selectedNavId = await fetchNavElementId('edge', e.id); 
           syncSelectedTargetInput(); 
           setStatus(`Indoor Edge 선택됨: ${e.id}`); 
@@ -198,7 +195,6 @@ function renderIndoorLayers() {
       L.DomEvent.stopPropagation(ev); 
       if (!isIndoor() || el.targetType.value !== 'node') return; 
       selectedNodeId = n.id; selectedEdgeId = null; 
-      // ★ 핵심: 클릭 시 navigation_elements.id를 찾아 할당
       selectedNavId = await fetchNavElementId('node', n.id); 
       syncSelectedTargetInput(); 
       setStatus(`Indoor Node 선택됨: ${n.id}`); 
@@ -219,7 +215,6 @@ function drawOutdoorLayers() {
     L.circleMarker([n.lat, n.lng], { radius: 6, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.9 }).addTo(outdoorNodeLayer).on('click', async () => { 
       if (el.nodeScope.value !== 'outdoor' || el.targetType.value !== 'node') return; 
       selectedNodeId = n.id; selectedEdgeId = null; 
-      // ★ 핵심: 클릭 시 navigation_elements.id를 찾아 할당
       selectedNavId = await fetchNavElementId('node', n.id); 
       syncSelectedTargetInput(); 
       setStatus(`Node ${n.id} selected`); 
@@ -231,7 +226,6 @@ function drawOutdoorLayers() {
     L.polyline([[a.lat, a.lng], [b.lat, b.lng]], { color: '#f59e0b', weight: 4 }).addTo(outdoorEdgeLayer).on('click', async () => { 
       if (el.nodeScope.value !== 'outdoor' || el.targetType.value !== 'edge') return; 
       selectedEdgeId = e.id; selectedNodeId = null; 
-      // ★ 핵심: 클릭 시 navigation_elements.id를 찾아 할당
       selectedNavId = await fetchNavElementId('edge', e.id); 
       syncSelectedTargetInput(); 
       setStatus(`Edge ${e.id} selected`); 
@@ -252,8 +246,8 @@ async function loadMappings() {
     const target = m.target_type === 'node' ? `node:${m.node_id ?? '-'}` : `edge:${m.edge_id ?? '-'}`;
     const floorLabel = m.floors?.floor_number ? `${m.floors.floor_number}F` : '-';
     return `<div class="item ${editId === m.id ? 'active' : ''}" data-id="${m.id}">
-      <div class="item-main"><span class="item-id">${m.camera_id}</span><span>${m.target_type.toUpperCase()}</span></div >
-      <div class="item-meta"><span>${target}</span><span>|</span><span>${floorLabel}</span></div >
+      <div class="item-main"><span class="item-id">${m.camera_id}</span><span class="item-type">${m.target_type.toUpperCase()}</span></div >
+      <div class="item-meta"><span class="item-target">${target}</span><span class="item-sep">|</span><span class="item-floor">${floorLabel}</span></div >
     </div >`;
   }).join('');
   el.mapList.querySelectorAll('.item').forEach(node => {
@@ -266,7 +260,7 @@ async function loadMappings() {
       el.nodeScope.value = m.node_scope;
       selectedNodeId = m.node_id ?? null;
       selectedEdgeId = m.edge_id ?? null;
-      selectedNavId = m.node_status_id; // ★ 중요: node_status_id에 저장된 NavID를 로드
+      selectedNavId = m.node_status_id; 
       syncSelectedTargetInput();
       if (m.building_id) { el.buildingId.value = String(m.building_id); renderFloorOptions(m.building_id); }
       if (m.floor_id) { el.floorId.value = String(m.floor_id); await loadIndoorData(); }
@@ -275,30 +269,61 @@ async function loadMappings() {
   });
 }
 
+/**
+ * ★ 핵심 수정: camera_id 중복 확인 로직 추가
+ * 1. 입력된 camera_id로 기존 매핑이 있는지 조회
+ * 2. 존재하면 (editId 사용) update
+ * 3. 존재하지 않으면 insert
+ */
 async function saveMapping() {
   const camera_id = el.cameraId.value;
   const target_type = el.targetType.value;
   const node_scope = el.nodeScope.value;
   const selected = currentSelectedId();
+  
   if (!camera_id || !selected) return setStatus('Missing required fields', false);
+
+  // 1. 중복 확인: 해당 camera_id를 가진 레코드가 있는지 먼저 조회
+  const { data: existing, error: fetchError } = await supabase
+    .from('camera_node_map')
+    .select('id')
+    .eq('camera_id', camera_id)
+    .maybeSingle();
+
+  if (fetchError) return setStatus('Error checking duplicates', false);
 
   const payload = {
     camera_id, target_type, node_scope,
     node_id: target_type === 'node' ? Number(selected) : null,
     edge_id: target_type === 'edge' ? Number(selected) : null,
-    node_status_id: selectedNavId, // ★ 핵심: navigation_elements.id를 저장
+    node_status_id: selectedNavId, 
     building_id: node_scope === 'indoor' && el.buildingId.value ? Number(el.buildingId.value) : null,
     floor_id: node_scope === 'indoor' && el.floorId.value ? Number(el.floorId.value) : null,
     updated_at: new Date().toISOString()
   };
 
-  const { error } = editId 
-    ? await supabase.from('camera_node_map').update(payload).eq('id', editId)
-    : await supabase.from('camera_node_map').insert(payload);
+  let finalError;
+  if (existing) {
+    // 2. 존재하면 해당 ID로 update
+    const { error: updateError } = await supabase
+      .from('camera_node_map')
+      .update(payload)
+      .eq('id', existing.id);
+    finalError = updateError;
+    if (!finalError) setStatus(`Updated: ${camera_id}`);
+  } else {
+    // 3. 존재하지 않으면 insert
+    const { error: insertError } = await supabase
+      .from('camera_node_map')
+      .insert(payload);
+    finalError = insertError;
+    if (!finalError) setStatus(`Inserted: ${camera_id}`);
+  }
 
-  if (error) return setStatus('Save failed', false);
-  setStatus('Saved successfully');
+  if (finalError) return setStatus(`Save failed: ${finalError.message}`, false);
+  
   await loadMappings();
+  clearForm();
 }
 
 async function deleteMapping() {
