@@ -54,7 +54,7 @@ export async function initAdminHeader(active = '') {
 
     style.innerHTML = `
     :root {
-      --admin-bg: rgba(30, 41, 59, 0.8);
+      --admin-bg: rgba(11, 18, 32, 0.76);
       --admin-border: rgba(255, 255, 255, 0.1);
       --admin-accent: #3b82f6;
       --admin-text: #f8fafc;
@@ -75,7 +75,7 @@ export async function initAdminHeader(active = '') {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 24px;
+      padding: 8px 24px;
       height: 64px;
       font-family: 'Pretendard', sans-serif;
     }
@@ -83,7 +83,9 @@ export async function initAdminHeader(active = '') {
     .admin-left {
       display: flex;
       align-items: center;
-      gap: 32px;
+      gap: 24px;
+      min-width: 0;
+      flex: 1;
     }
 
     .logo {
@@ -96,6 +98,7 @@ export async function initAdminHeader(active = '') {
       gap: 8px;
       cursor: pointer;
       transition: opacity 0.2s;
+      flex: 0 0 auto;
     }
 
     .logo:hover {
@@ -109,6 +112,13 @@ export async function initAdminHeader(active = '') {
     .nav {
       display: flex;
       gap: 4px;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .nav::-webkit-scrollbar {
+      display: none;
     }
 
     .nav button {
@@ -129,13 +139,16 @@ export async function initAdminHeader(active = '') {
     }
 
     .nav button.active {
-      background: rgba(59, 130, 246, 0.15);
-      color: var(--admin-accent);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      background: rgba(59, 130, 246, 0.16);
+      color: #bfdbfe;
     }
 
     .logout-group {
       display: flex;
       align-items: center;
+      flex: 0 0 auto;
+      margin-left: 8px;
     }
 
     .logout {
@@ -208,8 +221,10 @@ export async function initAdminHeader(active = '') {
   navButtons += `
     <button data-page="outdoor"><i class="fas fa-map-marked-alt"></i> Outdoor</button>
     <button data-page="indoor"><i class="fas fa-building"></i> Indoor</button>
+    <button data-page="indoorScan"><i class="fas fa-cubes"></i> Indoor Scan</button>
     <button data-page="elevation"><i class="fas fa-mountain"></i> Elevation</button>
     <button data-page="occupancy"><i class="fas fa-users"></i> Occupancy</button>
+    <button data-page="spatial"><i class="fas fa-vector-square"></i> Spatial 2D</button>
     <button data-page="gate"><i class="fas fa-exchange-alt"></i> Transfer</button>
     <button data-page="vision2NE"><i class="fas fa-link"></i> Camera Map</button>
     <button data-page="firmware"><i class="fas fa-microchip"></i> Firmware</button>
@@ -253,8 +268,10 @@ export async function initAdminHeader(active = '') {
     privilege: `${base}/sadmin.html`,
     outdoor: `${base}/outdoor/admin_outdoor_map.html`,
     indoor: `${base}/indoor/admin_indoor.html`,
+    indoorScan: `${base}/indoor/admin_indoor_reconstruction.html`,
     elevation: `${base}/outdoor/admin_elevation_editor.html`,
     occupancy: `${base}/admin_occupancy.html`,
+    spatial: `${base}/admin_spatial_analysis.html`,
     gate: `${base}/indoor/transfer_edges.html`,
     vision2NE: `${base}/admin_camera_map.html`,
     firmware: `${base}/admin_firmwareupdate.html`

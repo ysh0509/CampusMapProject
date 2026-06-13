@@ -1,0 +1,10 @@
+{
+  "video_source": "0",
+  "model_path": "../yolov8n.pt",
+  "confidence": 0.35,
+  "output_width": 720,
+  "output_height": 480,
+  "space_width_m": 12.0,
+  "space_height_m": 8.0,
+  "source_points": []
+}

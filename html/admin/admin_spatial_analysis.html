@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<script>
+    window.__ENV = {
+      SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+    };
+  </script>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spatial 2D Analysis</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/admin/admin_spatial_analysis.css">
+  <link rel="stylesheet" href="/html/admin/admin_premium.css">
+</head>
+<body>
+  <div id="admin-header"></div>
+  <main class="spatial-page">
+    <header class="page-heading">
+      <div>
+        <p class="eyebrow">DIGITAL TWIN FOUNDATION</p>
+        <h1>단일 카메라 2D 공간 분석</h1>
+        <p>사람의 바닥 접점을 평면 좌표로 투영해 실시간 탑뷰로 표시합니다.</p>
+      </div>
+      <div class="service-state"><span id="state-dot"></span><span id="state-text">연결 확인 중</span></div>
+    </header>
+
+    <section id="control-alert" class="control-alert">
+      <div>
+        <span id="alert-level">상태 확인 중</span>
+        <strong id="space-name">공간 매칭 정보 없음</strong>
+        <p id="alert-message">navigation_elements 기준 공간 상태를 불러오고 있습니다.</p>
+      </div>
+      <a id="space-config-link" href="/html/admin/indoor/admin_indoor_reconstruction.html">공간 구성 열기</a>
+    </section>
+
+    <section class="metrics">
+      <article><span>감지 인원</span><strong id="people-count">-</strong></article>
+      <article><span>처리 속도</span><strong><span id="fps">-</span> FPS</strong></article>
+      <article><span>보정 상태</span><strong id="calibration-state">미보정</strong></article>
+      <article><span>입력 해상도</span><strong id="frame-size">-</strong></article>
+      <article><span>공간 혼잡도</span><strong id="congestion-level">-</strong></article>
+    </section>
+
+    <section class="workspace">
+      <div class="visual-column">
+        <article class="viewer-card">
+          <div class="card-heading">
+            <div><span class="step">01</span><h2>카메라 원본</h2></div>
+            <span id="point-guide">좌상단부터 4개 지점을 선택하세요</span>
+          </div>
+          <div id="source-stage" class="stream-stage">
+            <img id="source-stream" alt="카메라 분석 스트림">
+            <svg id="calibration-overlay" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+        </article>
+
+        <article class="viewer-card">
+          <div class="card-heading">
+            <div><span class="step">02</span><h2>Bird's-eye View</h2></div>
+            <span>실시간 위치 및 이동 궤적</span>
+          </div>
+          <div class="stream-stage topview-stage">
+            <img id="topview-stream" alt="2D 탑뷰 스트림">
+            <svg id="obstacle-overlay" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg>
+          </div>
+        </article>
+      </div>
+
+      <aside class="control-card">
+        <p class="eyebrow">CALIBRATION</p>
+        <h2>공간 설정</h2>
+        <label>분석 API 주소<input id="api-base" value="http://127.0.0.1:8765"></label>
+        <label>영상 소스<input id="video-source" value="0" placeholder="0 또는 RTSP/HTTP URL"></label>
+        <div class="field-row">
+          <label>가로 길이 (m)<input id="space-width" type="number" min="0.1" step="0.1" value="12"></label>
+          <label>세로 길이 (m)<input id="space-height" type="number" min="0.1" step="0.1" value="8"></label>
+        </div>
+        <label>감지 신뢰도<input id="confidence" type="range" min="0.1" max="0.9" step="0.05" value="0.35"><span id="confidence-value">0.35</span></label>
+        <div class="point-list" id="point-list"></div>
+        <div class="button-row">
+          <button id="reset-points" class="secondary" type="button">지점 초기화</button>
+          <button id="save-config" type="button">설정 저장</button>
+        </div>
+        <p id="message" class="message">Python 분석 서비스를 실행한 뒤 연결됩니다.</p>
+        <div class="note">
+          <strong>4점 선택 순서</strong>
+          <p>좌상단 → 우상단 → 우하단 → 좌하단. 실제 바닥의 직사각형 경계를 기준으로 지정하세요.</p>
+        </div>
+      </aside>
+    </section>
+  </main>
+  <script type="module" src="/js/admin/admin_spatial_analysis.js"></script>
+</body>
+</html>

@@ -15,6 +15,16 @@ vision/
 .venv/
 venv/
 
+# Track the standalone spatial-analysis service while keeping local models
+# and virtual environments out of source control.
+!vision/
+vision/*
+!vision/spatial_topview.py
+!vision/spatial_topview_config.json
+!vision/SPATIAL_TOPVIEW.md
+!sql/
+!sql/indoor_spatial_schema.sql
+
 # =========================================================
 # 3. 에디터 및 시스템 설정 (개인 설정 및 불필요한 파일)
 # =========================================================

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Indoor 공간 구성</title>
+  <script>
+    window.__ENV = {
+      SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+    };
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/admin/admin_indoor_reconstruction.css">
+  <link rel="stylesheet" href="/html/admin/admin_premium.css">
+</head>
+<body>
+  <div id="admin-header"></div>
+  <main class="reconstruction-page">
+    <header class="page-heading">
+      <div>
+        <p class="eyebrow">INDOOR DIGITAL TWIN</p>
+        <h1>다각도 사진 기반 공간 구성</h1>
+        <p>장애물 후보 평면도를 생성하고 기준 거리 하나로 Indoor 좌표의 축척을 맞춥니다.</p>
+      </div>
+      <span class="indoor-only"><i class="fas fa-building"></i> Indoor 전용</span>
+    </header>
+
+    <section class="layout">
+      <aside class="control-panel">
+        <div class="step-title"><span>01</span><div><strong>대상 층 선택</strong><small>기존 Indoor 평면도와 연결됩니다.</small></div></div>
+        <label>건물<select id="building-select"><option value="">건물 선택</option></select></label>
+        <label>층<select id="floor-select"><option value="">층 선택</option></select></label>
+        <label>선택된 공간 매칭 대상
+          <select id="navigation-select"><option value="">노드 또는 엣지 선택</option></select>
+        </label>
+        <div class="map-selection-options">
+          <label><input id="show-nodes" type="checkbox" checked> 노드 표시</label>
+          <label><input id="show-edges" type="checkbox" checked> 엣지 표시</label>
+        </div>
+        <div id="camera-match" class="result-box">평면도에서 노드 또는 엣지를 클릭하세요.</div>
+        <label>호실 공간
+          <select id="room-select"><option value="">층 전체 / 새 호실</option></select>
+        </label>
+        <label>호실명<input id="room-name" placeholder="예: Q104"></label>
+        <div class="button-grid room-buttons">
+          <button id="draw-room" class="secondary" type="button">호실 영역 그리기</button>
+          <button id="reset-room" class="secondary" type="button">영역 초기화</button>
+        </div>
+        <button id="save-room" class="secondary" type="button">호실과 출입구 노드 연결 저장</button>
+        <div id="room-result" class="result-box">평면도에서 호실 경계를 지정할 수 있습니다.</div>
+
+        <div class="mode-switch">
+          <button id="mode-photo" class="mode active" type="button"><i class="fas fa-images"></i> 사진 기반</button>
+          <button id="mode-live" class="mode" type="button"><i class="fas fa-video"></i> 실시간 카메라</button>
+        </div>
+        <div id="depth-status" class="sensor-box">깊이 센서 확인 전</div>
+        <label id="monocular-confirm-wrap" class="confirm-row">
+          <input id="monocular-confirm" type="checkbox">
+          깊이 센서가 없어 단안 추정 오차가 발생할 수 있음을 확인했습니다.
+        </label>
+        <button id="open-live" class="secondary" type="button" disabled>실시간 탑뷰 관제 열기</button>
+
+        <div class="step-title"><span>02</span><div><strong>다각도 사진</strong><small>같은 공간을 둘러보며 촬영한 사진을 선택합니다.</small></div></div>
+        <label class="file-drop">
+          <input id="room-images" type="file" accept="image/*" multiple>
+          <i class="fas fa-images"></i>
+          <strong>사진 여러 장 선택</strong>
+          <small>권장 4~8장, 최대 12장</small>
+        </label>
+        <div id="image-list" class="image-list">선택된 사진이 없습니다.</div>
+        <label>분석 API<input id="api-base" value="http://127.0.0.1:8765"></label>
+        <button id="generate-draft" type="button"><i class="fas fa-wand-magic-sparkles"></i> 장애물 초안 생성</button>
+
+        <div class="step-title"><span>03</span><div><strong>기준 거리 입력</strong><small>평면도에서 두 점을 찍습니다.</small></div></div>
+        <label>실제 길이 (m)<input id="real-distance" type="number" min="0.1" step="0.1" placeholder="예: 5.2"></label>
+        <div class="button-grid">
+          <button id="start-scale" class="secondary" type="button">기준선 지정</button>
+          <button id="save-scale" class="secondary" type="button">축척 저장</button>
+        </div>
+        <div id="scale-result" class="result-box">기준선이 지정되지 않았습니다.</div>
+        <button id="save-obstacles" type="button"><i class="fas fa-save"></i> 장애물 확정 저장</button>
+        <p id="message" class="message">건물과 층을 선택해 시작하세요.</p>
+      </aside>
+
+      <section class="plan-panel">
+        <div class="plan-toolbar">
+          <div><strong id="plan-title">선택된 평면도 없음</strong><small id="plan-meta">노드 0 · 엣지 0 · 장애물 0</small></div>
+          <div class="legend"><span class="obstacle"></span>장애물 <span class="node"></span>노드 <span class="edge"></span>엣지</div>
+        </div>
+        <div id="plan-stage" class="plan-stage">
+          <img id="plan-image" alt="Indoor 평면도">
+          <svg id="plan-overlay" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg>
+          <div id="empty-state" class="empty-state"><i class="fas fa-map"></i><p>층을 선택하면 평면도가 표시됩니다.</p></div>
+        </div>
+        <div class="review-note">
+          노드·엣지는 평면도에서 직접 클릭해 선택합니다. 사진 기반 장애물 후보는 클릭해 포함 여부를 전환한 뒤 저장하세요.
+        </div>
+      </section>
+    </section>
+  </main>
+  <script type="module" src="/js/admin/indoor/admin_indoor_reconstruction.js"></script>
+</body>
+</html>
