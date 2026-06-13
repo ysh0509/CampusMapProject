@@ -50,6 +50,7 @@ const enterMap = document.getElementById('enterMap');
 const buildingMini = document.getElementById('buildingMini');
 const floorMini = document.getElementById('floorMini');
 const closeRoutePanel = document.getElementById('closeRoutePanel');
+const mobileSheetHandle = document.getElementById('mobileSheetHandle');
 const startFloor = document.getElementById('startFloor');
 const endFloor = document.getElementById('endFloor');
 const startNode = document.getElementById('startNode');
@@ -99,8 +100,19 @@ function showGuide() {
 function showMapUI() {
   guidePanel.classList.add('hidden');
   routePanel.classList.remove('hidden');
+  if (window.matchMedia('(max-width: 820px)').matches) {
+    setMobilePanelExpanded(false);
+  }
   const statusText = document.getElementById('statusText');
   if (statusText) statusText.textContent = '실내 지도 탐색 중';
+}
+
+function setMobilePanelExpanded(expanded) {
+  if (!routePanel || !window.matchMedia('(max-width: 820px)').matches) return;
+  routePanel.classList.toggle('mobile-collapsed', !expanded);
+  mobileSheetHandle?.setAttribute('aria-expanded', String(expanded));
+  mobileSheetHandle?.setAttribute('aria-label', expanded ? '경로 패널 접기' : '경로 패널 펼치기');
+  setTimeout(() => map.invalidateSize(), 320);
 }
 
 /* =========================================================
@@ -236,9 +248,30 @@ function bindEvents() {
   };
 
   closeRoutePanel.onclick = () => {
+    if (window.matchMedia('(max-width: 820px)').matches) {
+      setMobilePanelExpanded(false);
+      return;
+    }
     routePanel.classList.add('hidden');
     guidePanel.classList.remove('hidden');
   };
+
+  mobileSheetHandle?.addEventListener('click', () => {
+    setMobilePanelExpanded(routePanel.classList.contains('mobile-collapsed'));
+  });
+
+  let sheetTouchStartY = null;
+  routePanel.addEventListener('touchstart', event => {
+    sheetTouchStartY = event.touches[0]?.clientY ?? null;
+  }, { passive: true });
+  routePanel.addEventListener('touchend', event => {
+    if (sheetTouchStartY == null) return;
+    const endY = event.changedTouches[0]?.clientY ?? sheetTouchStartY;
+    const delta = endY - sheetTouchStartY;
+    sheetTouchStartY = null;
+    if (Math.abs(delta) < 45) return;
+    setMobilePanelExpanded(delta < 0);
+  }, { passive: true });
   startFloor.onchange = () => fillNodeSelectByFloor(startFloor.value, startNode);
   endFloor.onchange = () => fillNodeSelectByFloor(endFloor.value, endNode);
 

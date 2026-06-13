@@ -65,7 +65,10 @@
         </div>
 
         <aside class="route-panel hidden" id="routePanel" aria-labelledby="route-title">
-          <div class="mobile-drag-handle" aria-hidden="true"></div>
+          <button id="mobileSheetHandle" class="mobile-sheet-handle" type="button" aria-label="경로 패널 펼치기" aria-expanded="false">
+            <span class="mobile-drag-handle" aria-hidden="true"></span>
+            <span class="mobile-sheet-summary">경로 설정</span>
+          </button>
           <div class="route-heading">
             <div><p class="section-kicker">Indoor route</p><h2 id="route-title">실내 경로 찾기</h2></div>
             <button id="closeRoutePanel" class="icon-button" type="button" aria-label="경로 패널 닫기">×</button>

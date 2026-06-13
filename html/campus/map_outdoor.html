@@ -34,11 +34,14 @@
 
   <header class="mobile-header">
     <a class="mobile-brand" href="/"><span>C</span> Campus Navigator</a>
-    <button id="mobilePanelToggle" type="button" aria-expanded="true" aria-controls="panel">검색 접기</button>
+    <a class="mobile-indoor-link" href="/html/campus/map_indoor.html">실내 지도</a>
   </header>
 
   <aside id="panel" aria-labelledby="search-title">
-    <div class="sheet-handle" aria-hidden="true"></div>
+    <button id="mobilePanelHandle" class="mobile-panel-handle" type="button" aria-label="검색 패널 펼치기" aria-expanded="false">
+      <span class="sheet-handle" aria-hidden="true"></span>
+      <span class="sheet-summary">길찾기 설정</span>
+    </button>
     <div class="panel-heading">
       <div><p class="eyebrow">Campus route</p><h1 id="search-title">어디로 갈까요?</h1></div>
       <a class="indoor-shortcut" href="/html/campus/map_indoor.html">실내 지도</a>

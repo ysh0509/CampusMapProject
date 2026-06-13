@@ -29,6 +29,10 @@ let shiftSelectionQueue = [];
 const statusEl = document.getElementById('status');
 const views = document.querySelectorAll('.view');
 const tabs = document.querySelectorAll('.tab');
+const mapFloorTitle = document.getElementById('mapFloorTitle');
+const nodeCount = document.getElementById('nodeCount');
+const edgeCount = document.getElementById('edgeCount');
+const mapEmptyState = document.getElementById('mapEmptyState');
 
 // 등록 탭
 const bName = document.getElementById('bName');
@@ -56,11 +60,32 @@ function setStatus(t) {
   console.log(`[Status] ${t}`);
 }
 
+function updateMapSummary() {
+  if (nodeCount) nodeCount.textContent = String(nodes.length);
+  if (edgeCount) edgeCount.textContent = String(edges.length);
+
+  if (!currentFloor) {
+    if (mapFloorTitle) mapFloorTitle.textContent = '도면을 선택해 주세요';
+    mapEmptyState?.classList.remove('hidden');
+    return;
+  }
+
+  const building = buildings.find(b => Number(b.id) === Number(currentFloor.building_id));
+  if (mapFloorTitle) {
+    mapFloorTitle.textContent = `${building?.name || `건물 ${currentFloor.building_id}`} · ${currentFloor.floor_number}층`;
+  }
+  mapEmptyState?.classList.add('hidden');
+}
+
 // 탭 전환 로직
 tabs.forEach(tab => {
   tab.onclick = () => {
-    tabs.forEach(t => t.classList.remove('active'));
+    tabs.forEach(t => {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+    });
     tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
     mode = tab.dataset.mode;
     switchView(mode);
   };
@@ -70,6 +95,7 @@ function switchView(m) {
   views.forEach(v => v.style.display = 'none');
   const targetView = document.getElementById(`view-${m}`);
   if (targetView) targetView.style.display = 'block';
+  if (m === 'edit') setTimeout(() => map.invalidateSize(), 100);
 }
 
 // --- 데이터 로딩 로직 ---
@@ -81,7 +107,7 @@ async function loadBuildings() {
     fillBuildingSelect(fBuildingSel);
     fillBuildingSelect(selBuildingSel);
   } else {
-    setStatus('건물 로드 실패');
+    setStatus('건물 목록을 불러오지 못했습니다.');
   }
 }
 
@@ -91,7 +117,7 @@ function fillBuildingSelect(sel) {
   buildings.forEach(b => {
     const opt = document.createElement('option');
     opt.value = b.id;
-    opt.textContent = `${b.name || '건물'} (ID ${b.id})`;
+    opt.textContent = `${b.name || '이름 없는 건물'} (ID ${b.id})`;
     sel.appendChild(opt);
   });
 }
@@ -102,7 +128,7 @@ async function loadFloors() {
     floors = data || [];
     renderFloorList();
   } else {
-    setStatus('층 목록 로드 실패');
+    setStatus('층 목록을 불러오지 못했습니다.');
   }
 }
 
@@ -118,7 +144,7 @@ function renderFloorList() {
   });
 
   if (filtered.length === 0) {
-    floorList.innerHTML = '<div class="item">데이터가 없습니다.</div>';
+    floorList.innerHTML = '<div class="item"><div class="item-info">조건에 맞는 층이 없습니다.</div></div>';
     return;
   }
 
@@ -126,10 +152,10 @@ function renderFloorList() {
     const div = document.createElement('div');
     div.className = 'item';
     div.innerHTML = `
-      <div class="item-info">건물 ${x.building_id} / ${x.floor_number}층</div>
+      <div class="item-info">건물 ID ${x.building_id} · ${x.floor_number}층</div>
       <div class="item-actions">
-        <button class="secondary" data-id="${x.id}" data-action="edit">수정</button>
-        <button class="secondary" data-id="${x.id}" data-action="delete">삭제</button>
+        <button class="secondary" data-id="${x.id}" data-action="edit"><i class="fas fa-pen"></i> 이미지 수정</button>
+        <button class="secondary" data-id="${x.id}" data-action="delete"><i class="fas fa-trash"></i> 삭제</button>
       </div>`;
     floorList.appendChild(div);
   });
@@ -139,12 +165,12 @@ function renderFloorList() {
       const id = btn.dataset.id;
       const action = btn.dataset.action;
       if (action === 'delete') {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
+        if (!confirm('이 층과 연결된 도면 정보를 삭제하시겠습니까?')) return;
         const { error } = await supabase.from('floors').delete().eq('id', id);
         if (!error) loadFloors();
       } else if (action === 'edit') {
         const floor = floors.find(f => String(f.id) === String(id));
-        const newImg = prompt('새 이미지 URL을 입력하세요', floor.map_image_url || '');
+        const newImg = prompt('변경할 도면 이미지 URL을 입력하세요.', floor.map_image_url || '');
         if (newImg) {
           const { error } = await supabase.from('floors').update({ map_image_url: newImg }).eq('id', id);
           if (!error) loadFloors();
@@ -158,13 +184,13 @@ function renderFloorList() {
 
 btnAddBuilding.onclick = async () => {
   const name = bName.value.trim();
-  if (!name) { setStatus('건물 이름을 입력하세요.'); return; }
+  if (!name) { setStatus('건물 이름을 입력해 주세요.'); return; }
 
   const { error } = await supabase.from('buildings').insert({ name });
   if (error) {
-    setStatus('건물 추가 실패');
+    setStatus('건물을 추가하지 못했습니다.');
   } else {
-    setStatus('건물 추가 완료');
+    setStatus('건물이 추가되었습니다.');
     bName.value = '';
     await loadBuildings();
   }
@@ -173,7 +199,7 @@ btnAddBuilding.onclick = async () => {
 btnUpload.onclick = async () => {
   try {
     const file = fileInput.files?.[0];
-    if (!file) { alert('파일을 선택해주세요.'); return; }
+    if (!file) { alert('업로드할 도면 이미지를 선택해 주세요.'); return; }
 
     const fileExt = file.name.split('.').pop()?.toLowerCase();
     const fileName = `indoor/floor_${Date.now()}.${fileExt}`;
@@ -186,10 +212,10 @@ btnUpload.onclick = async () => {
 
     const { data: pub } = supabase.storage.from('maps').getPublicUrl(fileName);
     fImageUrl.value = pub.publicUrl;
-    setStatus('이미지 업로드 성공');
+    setStatus('도면 이미지 업로드가 완료되었습니다.');
   } catch (e) {
     console.error(e);
-    alert('업로드 실패: ' + e.message);
+    alert('이미지 업로드에 실패했습니다: ' + e.message);
   }
 };
 
@@ -198,7 +224,7 @@ btnAddFloor.onclick = async () => {
   const flr = Number(fFloorNum.value);
   const img = fImageUrl.value.trim();
 
-  if (!bid || !flr || !img) { setStatus('모든 필드를 채워주세요.'); return; }
+  if (!bid || !flr || !img) { setStatus('건물, 층, 이미지 정보를 모두 입력해 주세요.'); return; }
 
   const { error } = await supabase.from('floors').insert({
     building_id: bid,
@@ -208,9 +234,9 @@ btnAddFloor.onclick = async () => {
   });
 
   if (error) {
-    setStatus('평면도 등록 실패');
+    setStatus('층 도면을 등록하지 못했습니다.');
   } else {
-    setStatus('평면도 등록 완료');
+    setStatus('층 도면이 등록되었습니다.');
     fFloorNum.value = '';
     fImageUrl.value = '';
     await loadFloors();
@@ -222,17 +248,18 @@ btnAddFloor.onclick = async () => {
 btnLoadFloor.onclick = async () => {
   const bid = Number(selBuildingSel.value);
   const flr = Number(selFloor.value);
-  if (!bid || !flr) { setStatus('건물과 층을 선택하세요.'); return; }
+  if (!bid || !flr) { setStatus('편집할 건물과 층을 선택해 주세요.'); return; }
 
   const { data: floor, error } = await supabase.from('floors')
     .select('*').eq('building_id', bid).eq('floor_number', flr).single();
 
-  if (error || !floor) { setStatus('평면도를 찾을 수 없습니다.'); return; }
+  if (error || !floor) { setStatus('등록된 층 도면을 찾을 수 없습니다.'); return; }
 
   currentFloor = floor;
   await loadNodesEdges(floor.id);
   loadImage(floor);
-  setStatus(`편집 중: ${floor.building_id}번 건물 ${floor.floor_number}층 (Scale: ${floor.scale || 1})`);
+  updateMapSummary();
+  setStatus(`${floor.floor_number}층 도면 편집을 시작합니다.`);
 };
 
 async function loadNodesEdges(floorId) {
@@ -244,6 +271,7 @@ async function loadNodesEdges(floorId) {
     nodes.some(nn => nn.id === ed.from_node) && 
     nodes.some(nn => nn.id === ed.to_node)
   );
+  updateMapSummary();
   renderMap();
 }
 
@@ -495,6 +523,8 @@ searchBuilding.oninput = renderFloorList;
 searchFloor.oninput = renderFloorList;
 
 async function init() {
+  tabs.forEach(tab => tab.setAttribute('aria-selected', String(tab.classList.contains('active'))));
+  updateMapSummary();
   await loadBuildings();
   await loadFloors();
 }

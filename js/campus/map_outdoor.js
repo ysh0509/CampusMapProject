@@ -35,13 +35,21 @@ const resetBtn = document.getElementById('reset');
 const indoorBtn = document.getElementById('viewIndoor');
 const stepsBody = document.getElementById('stepsBody');
 const statusEl = document.getElementById('status');
-const mobilePanelToggle = document.getElementById('mobilePanelToggle');
+const mobilePanelHandle = document.getElementById('mobilePanelHandle');
 const searchPanel = document.getElementById('panel');
 const stepsPanel = document.getElementById('steps');
 const stepsHeader = document.getElementById('stepsHeader');
 
 function setStatus(t) {
   if (statusEl) statusEl.innerText = t;
+}
+
+function setMobileSearchExpanded(expanded) {
+  if (!searchPanel || !window.matchMedia('(max-width: 900px)').matches) return;
+  searchPanel.classList.toggle('mobile-collapsed', !expanded);
+  mobilePanelHandle?.setAttribute('aria-expanded', String(expanded));
+  mobilePanelHandle?.setAttribute('aria-label', expanded ? '검색 패널 접기' : '검색 패널 펼치기');
+  setTimeout(() => map.invalidateSize(), 320);
 }
 
 // 2. 앱 시작 및 초기화
@@ -83,12 +91,24 @@ async function init() {
 function bindUI() {
   if (indoorBtn) indoorBtn.onclick = openIndoorRoute;
 
-  if (mobilePanelToggle && searchPanel) {
-    mobilePanelToggle.onclick = () => {
-      const collapsed = searchPanel.classList.toggle('mobile-collapsed');
-      mobilePanelToggle.textContent = collapsed ? '검색 열기' : '검색 접기';
-      mobilePanelToggle.setAttribute('aria-expanded', String(!collapsed));
+  if (mobilePanelHandle && searchPanel) {
+    setMobileSearchExpanded(false);
+    mobilePanelHandle.onclick = () => {
+      setMobileSearchExpanded(searchPanel.classList.contains('mobile-collapsed'));
     };
+
+    let panelTouchStartY = null;
+    searchPanel.addEventListener('touchstart', event => {
+      panelTouchStartY = event.touches[0]?.clientY ?? null;
+    }, { passive: true });
+    searchPanel.addEventListener('touchend', event => {
+      if (panelTouchStartY == null) return;
+      const endY = event.changedTouches[0]?.clientY ?? panelTouchStartY;
+      const delta = endY - panelTouchStartY;
+      panelTouchStartY = null;
+      if (Math.abs(delta) < 45) return;
+      setMobileSearchExpanded(delta < 0);
+    }, { passive: true });
   }
 
   if (stepsHeader && stepsPanel) {
@@ -205,7 +225,7 @@ function generateGuideText(path, nodeMap, nodeDegreeMap) {
 function renderRoutes() {
   if (!stepsBody) return;
   stepsBody.innerHTML = '';
-  if (stepsPanel && state.routes.length) {
+  if (stepsPanel && state.routes.length && !window.matchMedia('(max-width: 900px)').matches) {
     stepsPanel.classList.remove('steps-collapsed');
     stepsHeader?.setAttribute('aria-expanded', 'true');
   }
@@ -241,6 +261,7 @@ async function runRoute() {
     return;
   }
 
+  setMobileSearchExpanded(false);
   setStatus('경로 계산 중...');
   clearPath(map, state.lines);
   state.lines = [];

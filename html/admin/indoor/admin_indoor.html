@@ -1,366 +1,180 @@
 <!DOCTYPE html>
-<script>
-  window.__ENV = {
-    SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
-    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
-  };
-</script>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Indoor Admin | Smart Campus</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-  <!-- Google Fonts: Pretendard 대체용 Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    /* admin_theme.css 기반 Dark Enterprise Theme */
-    --bg-main: #0f172a;           /* Deep Navy */
-    --bg-card: rgba(30, 41, 59, 0.7); /* Glassmorphism Card */
-    --bg-input: rgba(15, 23, 42, 0.8);
-    
-    --text-primary: #f8fafc;      /* Off-white */
-    --text-secondary: #94a3b8;    /* Slate */
-    
-    --accent-primary: #3b82f6;    /* Blue */
-    --accent-success: #10b981;    /* Green */
-    --accent-warning: #f59e0b;    /* Amber */
-    --accent-danger: #ef4444;     /* Red */
-    
-    --border-color: rgba(255, 255, 255, 0.1);
-    --glass-blur: blur(12px);
-    
-    --radius-lg: 20px;
-    --radius-md: 12px;
-    --radius-sm: 8px;
-    --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-  }
-
-  * { box-sizing: border-box; font-family: 'Inter', 'Pretendard', system-ui, -apple-system, sans-serif; }
-  body { margin: 0; background: var(--bg-main); color: var(--text-primary); overflow: hidden; }
-
-  #admin-content { position: relative; z-index: 1; height: 100vh; display: flex; flex-direction: column; }
-  #app { display: flex; flex: 1; overflow: hidden; }
-
-  /* Sidebar Styling - Glassmorphism 적용 */
-  #sidebar {
-    width: 380px;
-    background: var(--bg-card);
-    backdrop-filter: var(--glass-blur);
-    border-right: 1px solid var(--border-color);
-    padding: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    overflow-y: auto;
-    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
-  }
-
-  h1 { margin: 0; font-size: 22px; font-weight: 700; color: var(--accent-primary); letter-spacing: -0.5px; }
-  h3 { margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-
-  /* Tab Navigation */
-  .tabs { 
-    display: flex; 
-    background: var(--bg-input); 
-    padding: 4px; 
-    border-radius: 12px; 
-    gap: 4px; 
-  }
-  .tab {
-    flex: 1;
-    padding: 8px 4px;
-    text-align: center;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    transition: all 0.2s ease;
-  }
-  .tab.active { 
-    background: var(--accent-primary); 
-    color: white; 
-    box-shadow: var(--shadow);
-  }
-
-  /* Section & Card Styling */
-  .section {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: 20px;
-    box-shadow: var(--shadow);
-    backdrop-filter: var(--glass-blur);
-  }
-
-  .row { display: flex; gap: 10px; margin-bottom: 12px; }
-  .row > div { flex: 1; }
-
-  /* Input & Select Styling - Dark Theme */
-  input, select {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
-    font-size: 14px;
-    background: var(--bg-input);
-    color: var(--text-primary);
-    transition: border-color 0.2s, box-shadow 0.2s;
-    outline: none;
-  }
-  input:focus, select:focus {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-  }
-  input::placeholder { color: #475569; }
-
-  /* Button Styling - Dark Theme */
-  #sidebar button {
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  /* Primary Action Buttons */
-  #sidebar button#btnAddBuilding, 
-  #sidebar button#btnAddFloor, 
-  #sidebar button#btnLoadFloor, 
-  #sidebar button#btnUploadImage {
-    background: var(--accent-primary);
-    color: white;
-    margin-top: 8px;
-  }
-
-  #sidebar button#btnAddBuilding:hover, 
-  #sidebar button#btnAddFloor:hover, 
-  #sidebar button#btnLoadFloor:hover, 
-  #sidebar button#btnUploadImage:hover {
-    background: #2563eb;
-    transform: translateY(-1px);
-  }
-
-  /* Secondary Action Buttons */
-  #sidebar button.secondary {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-  }
-
-  #sidebar button.secondary:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  /* Delete Button */
-  #sidebar button#btn_delete, 
-  #sidebar button.btn-delete { 
-    background: rgba(239, 68, 68, 0.15); 
-    color: var(--accent-danger); 
-    border: 1px solid var(--accent-danger);
-  }
-  #sidebar button#btn_delete:hover,
-  #sidebar button.btn-delete:hover { 
-    background: var(--accent-danger); 
-    color: white; 
-  }
-
-  /* Success/Outline Buttons */
-  #sidebar button.btn-success-outline { 
-    background: rgba(16, 185, 129, 0.15); 
-    color: var(--accent-success); 
-    border: 1px solid var(--accent-success);
-  }
-  #sidebar button.btn-success-outline:hover { 
-    background: var(--accent-success); 
-    color: white; 
-  }
-
-  /* List & Item Styling */
-  .list {
-    max-height: 300px;
-    overflow-y: auto;
-    margin-top: 8px;
-  }
-  .item {
-    padding: 12px;
-    border-bottom: 1px solid var(--border-color);
-    font-size: 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    color: var(--text-primary);
-  }
-  .item:last-child { border-bottom: none; }
-  .item-info { font-weight: 500; color: var(--text-primary); }
-  .item-actions { display: flex; gap: 6px; }
-  .item-actions button { 
-    width: auto; 
-    padding: 6px 12px; 
-    font-size: 12px; 
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-  }
-  .item-actions button:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-  }
-
-  /* Tools Box */
-  .tools-box {
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    border-radius: var(--radius-md);
-    padding: 12px;
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.6;
-  }
-  .tools-box div { display: flex; align-items: center; gap: 6px; }
-  .tools-box span { font-weight: 700; color: var(--accent-primary); }
-
-  /* Map Area */
-  #map { flex: 1; background: #0f172a; }
-
-  /* Status Floating Bar */
-  #status-container {
-    position: absolute;
-    bottom: 60px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 2000;
-    pointer-events: none;
-  }
-
-  #status {
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(10px);
-    color: #f8fafc;
-    padding: 10px 24px;
-    border-radius: 50px;
-    font-size: 14px;
-    font-weight: 600;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    min-width: 120px;
-    text-align: center;
-  }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
-
-  @media (max-width: 768px) {
-    #sidebar { width: 100%; position: absolute; height: 50%; z-index: 2000; }
-    #app { flex-direction: column; }
-  }
-</style>
-
+  <title>실내 지도 관리 | Smart Campus</title>
+  <script>
+    window.__ENV = {
+      SUPABASE_URL: 'https://zetmjnilmdfurkjafwte.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpldG1qbmlsbWRmdXJramFmd3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3OTQ1NDAsImV4cCI6MjA5MTM3MDU0MH0.7BRTPKLPIefRfH32EOceQ_l9rOFE-j2LX2-v13QKEj8'
+    };
+  </script>
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png">
+  <link rel="stylesheet" href="../admin_theme.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="/css/admin/admin_indoor.css">
 </head>
 <body>
   <div id="admin-header"></div>
 
   <div id="admin-content">
     <div id="app">
-      <!-- Sidebar -->
-      <aside id="sidebar">
-        <h1>Indoor Admin</h1>
+      <aside id="sidebar" aria-label="실내 지도 관리 도구">
+        <header class="workspace-heading">
+          <div class="workspace-icon"><i class="fas fa-building"></i></div>
+          <div>
+            <p class="eyebrow">Indoor map workspace</p>
+            <h1>실내 지도 관리</h1>
+            <p class="workspace-description">건물과 층을 등록하고 지도 위의 이동 경로를 편집합니다.</p>
+          </div>
+        </header>
 
-        <!-- Tab Navigation -->
-        <nav class="tabs">
-          <div class="tab active" data-mode="floor_new">등록</div>
-          <div class="tab" data-mode="floor_manage">관리</div>
-          <div class="tab" data-mode="edit">편집</div>
+        <nav class="tabs" aria-label="작업 모드">
+          <button class="tab active" data-mode="floor_new" type="button">
+            <i class="fas fa-plus"></i><span>등록</span>
+          </button>
+          <button class="tab" data-mode="floor_manage" type="button">
+            <i class="fas fa-layer-group"></i><span>층 관리</span>
+          </button>
+          <button class="tab" data-mode="edit" type="button">
+            <i class="fas fa-pen-ruler"></i><span>지도 편집</span>
+          </button>
         </nav>
 
-        <!-- View: Floor Registration -->
-        <div id="view-floor_new" class="view">
-          <div class="section">
-            <h3>건물 설정</h3>
-            <div class="row">
-              <input id="bName" placeholder="새 건물 이름 입력" />
+        <div class="view-container">
+          <section id="view-floor_new" class="view" aria-label="건물 및 층 등록">
+            <div class="section">
+              <div class="section-heading">
+                <span class="step-number">1</span>
+                <div><h2>건물 등록</h2><p>새로운 캠퍼스 건물을 추가합니다.</p></div>
+              </div>
+              <label for="bName">건물 이름</label>
+              <input id="bName" placeholder="예: 공학관">
+              <button id="btnAddBuilding" class="primary-button" type="button">
+                <i class="fas fa-plus"></i> 건물 추가
+              </button>
             </div>
-            <button id="btnAddBuilding">건물 추가</button>
-          </div>
 
-          <div class="section" style="margin-top: 16px;">
-            <h3>평면도 업로드</h3>
-            <div class="row">
-              <select id="fBuildingSel">
-                <option value="">건물 선택</option>
-              </select>
-              <input id="fFloorNum" placeholder="층 (예: 1)" type="number" />
+            <div class="section">
+              <div class="section-heading">
+                <span class="step-number">2</span>
+                <div><h2>층 도면 등록</h2><p>건물과 층을 지정한 뒤 도면을 업로드합니다.</p></div>
+              </div>
+              <div class="field-grid">
+                <div>
+                  <label for="fBuildingSel">건물</label>
+                  <select id="fBuildingSel"><option value="">건물 선택</option></select>
+                </div>
+                <div>
+                  <label for="fFloorNum">층</label>
+                  <input id="fFloorNum" placeholder="예: 1" type="number">
+                </div>
+              </div>
+              <label for="floorImageFile">도면 이미지</label>
+              <div class="file-field">
+                <input type="file" id="floorImageFile" accept="image/*">
+                <i class="fas fa-cloud-arrow-up"></i>
+              </div>
+              <button id="btnUploadImage" class="secondary-button" type="button">
+                <i class="fas fa-upload"></i> 이미지 업로드
+              </button>
+              <label for="fImageUrl">이미지 URL</label>
+              <input id="fImageUrl" placeholder="업로드 후 자동으로 입력됩니다">
+              <button id="btnAddFloor" class="primary-button" type="button">
+                <i class="fas fa-check"></i> 층 도면 등록
+              </button>
             </div>
-            <div style="margin-bottom: 12px;">
-              <input type="file" id="floorImageFile" accept="image/*" style="font-size: 12px; padding: 8px;" />
-            </div>
-            <button id="btnUploadImage" class="secondary">이미지 서버 업로드</button>
-            <input id="fImageUrl" placeholder="업로드된 URL (자동 입력)" style="margin-top: 8px;" />
-            <button id="btnAddFloor" style="margin-top: 12px;">평면도 등록 완료</button>
-          </div>
-        </div>
+          </section>
 
-        <!-- View: Floor Management -->
-        <div id="view-floor_manage" class="view" style="display:none;">
-          <div class="section">
-            <h3>필터링</h3>
-            <div class="row">
-              <input id="searchBuilding" placeholder="건물 ID" />
-              <input id="searchFloor" placeholder="층" />
+          <section id="view-floor_manage" class="view" style="display:none" aria-label="등록된 층 관리">
+            <div class="section fill-section">
+              <div class="section-heading">
+                <span class="section-icon"><i class="fas fa-filter"></i></span>
+                <div><h2>등록된 층</h2><p>건물 ID와 층 번호로 목록을 필터링합니다.</p></div>
+              </div>
+              <div class="field-grid">
+                <div><label for="searchBuilding">건물 ID</label><input id="searchBuilding" placeholder="전체"></div>
+                <div><label for="searchFloor">층 번호</label><input id="searchFloor" placeholder="전체"></div>
+              </div>
+              <div id="floorList" class="list" aria-live="polite"></div>
             </div>
-            <div id="floorList" class="list">
-              <!-- Items injected by JS -->
-            </div>
-          </div>
-        </div>
+          </section>
 
-        <!-- View: Node/Edge Editing -->
-        <div id="view-edit" class="view" style="display:none;">
-          <div class="section">
-            <h3>편집 대상 선택</h3>
-            <div class="row">
-              <select id="selBuildingSel">
-                <option value="">건물 선택</option>
-              </select>
-              <input id="selFloor" placeholder="층" type="number" />
+          <section id="view-edit" class="view" style="display:none" aria-label="노드 및 경로 편집">
+            <div class="section">
+              <div class="section-heading">
+                <span class="section-icon"><i class="fas fa-location-crosshairs"></i></span>
+                <div><h2>편집 대상 선택</h2><p>도면을 불러오면 지도 편집 도구가 활성화됩니다.</p></div>
+              </div>
+              <div class="field-grid">
+                <div>
+                  <label for="selBuildingSel">건물</label>
+                  <select id="selBuildingSel"><option value="">건물 선택</option></select>
+                </div>
+                <div>
+                  <label for="selFloor">층</label>
+                  <input id="selFloor" placeholder="예: 1" type="number">
+                </div>
+              </div>
+              <button id="btnLoadFloor" class="primary-button" type="button">
+                <i class="fas fa-map"></i> 도면 불러오기
+              </button>
             </div>
-            <button id="btnLoadFloor">데이터 불러오기</button>
-          </div>
 
-          <div class="section" style="margin-top: 16px;">
-            <h3>조작 가이드</h3>
-            <div class="tools-box">
-              <div><span>• 더블클릭:</span> 노드(지점) 추가</div>
-              <div><span>• 드래그:</span> 노드 위치 이동</div>
-              <div><span>• 2회 클릭:</span> 엣지(경로) 생성/수정</div>
-              <div><span>• shift누르기 + 클릭:</span> 엣지 연속 생성</div>
-              <div><span>• ESC:</span> 선택 상태 초기화</div>
+            <div class="section guide-section">
+              <div class="section-heading compact">
+                <span class="section-icon"><i class="fas fa-keyboard"></i></span>
+                <div><h2>빠른 조작</h2><p>지도 위에서 바로 편집할 수 있습니다.</p></div>
+              </div>
+              <div class="shortcut-list">
+                <div><kbd>더블 클릭</kbd><span>새 노드 추가</span></div>
+                <div><kbd>드래그</kbd><span>노드 위치 이동</span></div>
+                <div><kbd>노드 2개</kbd><span>두 노드 사이 경로 생성</span></div>
+                <div><kbd>Shift + 클릭</kbd><span>연속 경로 생성</span></div>
+                <div><kbd>ESC</kbd><span>선택 상태 초기화</span></div>
+              </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Status Bar (Bottom of Sidebar) -->
-        <div id="status-container">
-          <div id="status">Ready</div>
+          </section>
         </div>
       </aside>
 
-      <!-- Map Area -->
-      <main id="map"></main>
+      <main class="map-workspace">
+        <div id="map" aria-label="실내 도면 편집 지도"></div>
+
+        <div class="map-context">
+          <div class="map-context-icon"><i class="fas fa-map"></i></div>
+          <div>
+            <span>현재 작업</span>
+            <strong id="mapFloorTitle">도면을 선택해 주세요</strong>
+          </div>
+        </div>
+
+        <div class="map-stats" aria-label="지도 데이터 요약">
+          <div><span class="stat-dot node"></span><strong id="nodeCount">0</strong><small>노드</small></div>
+          <div><span class="stat-line walk"></span><strong id="edgeCount">0</strong><small>경로</small></div>
+        </div>
+
+        <div class="map-legend" aria-label="경로 유형 범례">
+          <div class="legend-title">경로 유형</div>
+          <div><span class="legend-line walk"></span>일반 보행</div>
+          <div><span class="legend-line stairs"></span>계단</div>
+          <div><span class="legend-line elevator"></span>엘리베이터</div>
+        </div>
+
+        <div id="mapEmptyState" class="map-empty-state">
+          <div class="empty-icon"><i class="fas fa-map-location-dot"></i></div>
+          <h2>편집할 도면을 불러오세요</h2>
+          <p>왼쪽의 <strong>지도 편집</strong> 탭에서 건물과 층을 선택하면<br>노드와 경로를 편집할 수 있습니다.</p>
+        </div>
+
+        <div id="status-container">
+          <span class="status-pulse"></span>
+          <div id="status" role="status">준비 완료</div>
+        </div>
+      </main>
     </div>
   </div>
 
