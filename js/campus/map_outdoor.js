@@ -35,6 +35,10 @@ const resetBtn = document.getElementById('reset');
 const indoorBtn = document.getElementById('viewIndoor');
 const stepsBody = document.getElementById('stepsBody');
 const statusEl = document.getElementById('status');
+const mobilePanelToggle = document.getElementById('mobilePanelToggle');
+const searchPanel = document.getElementById('panel');
+const stepsPanel = document.getElementById('steps');
+const stepsHeader = document.getElementById('stepsHeader');
 
 function setStatus(t) {
   if (statusEl) statusEl.innerText = t;
@@ -78,6 +82,21 @@ async function init() {
 // 3. UI 이벤트 바인딩
 function bindUI() {
   if (indoorBtn) indoorBtn.onclick = openIndoorRoute;
+
+  if (mobilePanelToggle && searchPanel) {
+    mobilePanelToggle.onclick = () => {
+      const collapsed = searchPanel.classList.toggle('mobile-collapsed');
+      mobilePanelToggle.textContent = collapsed ? '검색 열기' : '검색 접기';
+      mobilePanelToggle.setAttribute('aria-expanded', String(!collapsed));
+    };
+  }
+
+  if (stepsHeader && stepsPanel) {
+    stepsHeader.onclick = () => {
+      const collapsed = stepsPanel.classList.toggle('steps-collapsed');
+      stepsHeader.setAttribute('aria-expanded', String(!collapsed));
+    };
+  }
 
   startToggle.querySelectorAll('.toggle').forEach(el => {
     el.onclick = () => {
@@ -186,6 +205,10 @@ function generateGuideText(path, nodeMap, nodeDegreeMap) {
 function renderRoutes() {
   if (!stepsBody) return;
   stepsBody.innerHTML = '';
+  if (stepsPanel && state.routes.length) {
+    stepsPanel.classList.remove('steps-collapsed');
+    stepsHeader?.setAttribute('aria-expanded', 'true');
+  }
   
   state.routes.forEach((r, i) => {
     const card = document.createElement('div');
@@ -417,7 +440,9 @@ function resetAll() {
   clearPath(map, state.lines);
   state.lines = [];
   clearMarkers();
-  if (stepsBody) stepsBody.innerHTML = '';
+  if (stepsBody) stepsBody.innerHTML = '<div class="guide-empty">경로를 검색하면 추천 경로가 표시됩니다.</div>';
+  if (stepsPanel) stepsPanel.classList.add('steps-collapsed');
+  stepsHeader?.setAttribute('aria-expanded', 'false');
   startToggle.querySelectorAll('.toggle').forEach(x => x.classList.remove('active'));
   endToggle.querySelectorAll('.toggle').forEach(x => x.classList.remove('active'));
   if (indoorBtn) indoorBtn.disabled = true;

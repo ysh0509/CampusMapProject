@@ -98,8 +98,9 @@ function showGuide() {
 
 function showMapUI() {
   guidePanel.classList.add('hidden');
-  // 사이드바(routePanel)는 이미 화면에 있으므로 hidden만 해제하거나 표시
-  routePanel.classList.remove('hidden'); 
+  routePanel.classList.remove('hidden');
+  const statusText = document.getElementById('statusText');
+  if (statusText) statusText.textContent = '실내 지도 탐색 중';
 }
 
 /* =========================================================
@@ -234,7 +235,10 @@ function bindEvents() {
     await loadFloorAnimated();
   };
 
-  closeRoutePanel.onclick = () => routePanel.classList.add('hidden');
+  closeRoutePanel.onclick = () => {
+    routePanel.classList.add('hidden');
+    guidePanel.classList.remove('hidden');
+  };
   startFloor.onchange = () => fillNodeSelectByFloor(startFloor.value, startNode);
   endFloor.onchange = () => fillNodeSelectByFloor(endFloor.value, endNode);
 
