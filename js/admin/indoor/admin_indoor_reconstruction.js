@@ -75,22 +75,54 @@ function selectedFiles() {
 }
 
 async function loadBaseData() {
-  const [buildingResult, floorResult, navigationResult, cameraMapResult] = await Promise.all([
+  const [buildingResult, floorResult, cameraMapResult] = await Promise.all([
     supabase.from('buildings').select('id,name').order('name'),
     supabase.from('floors').select('*').order('floor_number'),
-    supabase.from('navigation_elements').select('*').eq('scope', 'indoor').order('id'),
     supabase.from('camera_node_map').select('camera_id,node_status_id,node_scope').eq('node_scope', 'indoor')
   ]);
-  if (buildingResult.error || floorResult.error || navigationResult.error) {
+  if (buildingResult.error || floorResult.error) {
     setMessage('건물 또는 층 목록을 불러오지 못했습니다.', true);
     return;
   }
   buildings = buildingResult.data || [];
   floors = floorResult.data || [];
-  navigationElements = navigationResult.data || [];
   cameraMappings = cameraMapResult.data || [];
   el.building.innerHTML = '<option value="">건물 선택</option>' +
     buildings.map((building) => `<option value="${building.id}">${building.name}</option>`).join('');
+}
+
+async function loadFloorNavigationElements() {
+  const nodeIds = nodes.map((node) => node.id);
+  const edgeIds = edges.map((edge) => edge.id);
+  const queries = [];
+
+  if (nodeIds.length) {
+    queries.push(
+      supabase
+        .from('navigation_elements')
+        .select('*')
+        .eq('scope', 'indoor')
+        .eq('element_type', 'node')
+        .eq('source_table', 'indoor_nodes')
+        .in('elements_id', nodeIds)
+    );
+  }
+  if (edgeIds.length) {
+    queries.push(
+      supabase
+        .from('navigation_elements')
+        .select('*')
+        .eq('scope', 'indoor')
+        .eq('element_type', 'edge')
+        .eq('source_table', 'indoor_edges')
+        .in('elements_id', edgeIds)
+    );
+  }
+
+  const results = await Promise.all(queries);
+  const failed = results.find((result) => result.error);
+  if (failed) throw failed.error;
+  navigationElements = results.flatMap((result) => result.data || []);
 }
 
 function renderFloorOptions() {
@@ -117,6 +149,12 @@ async function loadFloor() {
   nodes = nodeResult.data || [];
   const nodeIds = new Set(nodes.map((node) => node.id));
   edges = (edgeResult.data || []).filter((edge) => nodeIds.has(edge.from_node) && nodeIds.has(edge.to_node));
+  try {
+    await loadFloorNavigationElements();
+  } catch (error) {
+    navigationElements = [];
+    setMessage(`공간 매칭 정보를 불러오지 못했습니다: ${error.message}`, true);
+  }
   roomSpaces = roomResult.data || [];
   roomPoints = [];
   renderRoomOptions();
