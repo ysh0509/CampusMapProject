@@ -9,6 +9,11 @@ initAdminHeader('indoor');
 // --- 전역 변수 ---
 const map = L.map('map', { crs: L.CRS.Simple, zoomControl: true });
 let imageLayer = null;
+const COORDINATE_SIZE = 1000;
+const FIT_PADDING = [44, 44];
+let floorPlanSize = { width: COORDINATE_SIZE, height: COORDINATE_SIZE };
+let floorPlanBounds = null;
+let imageLoadToken = 0;
 
 let mode = 'floor_new';
 let buildings = [];
@@ -95,7 +100,12 @@ function switchView(m) {
   views.forEach(v => v.style.display = 'none');
   const targetView = document.getElementById(`view-${m}`);
   if (targetView) targetView.style.display = 'block';
-  if (m === 'edit') setTimeout(() => map.invalidateSize(), 100);
+  if (m === 'edit') {
+    setTimeout(() => {
+      map.invalidateSize();
+      fitFloorPlan();
+    }, 100);
+  }
 }
 
 // --- 데이터 로딩 로직 ---
@@ -256,8 +266,8 @@ btnLoadFloor.onclick = async () => {
   if (error || !floor) { setStatus('등록된 층 도면을 찾을 수 없습니다.'); return; }
 
   currentFloor = floor;
+  await loadImage(floor);
   await loadNodesEdges(floor.id);
-  loadImage(floor);
   updateMapSummary();
   setStatus(`${floor.floor_number}층 도면 편집을 시작합니다.`);
 };
@@ -275,12 +285,63 @@ async function loadNodesEdges(floorId) {
   renderMap();
 }
 
-function loadImage(floor) {
+function getFloorPlanSize(naturalWidth, naturalHeight) {
+  if (!naturalWidth || !naturalHeight) {
+    return { width: COORDINATE_SIZE, height: COORDINATE_SIZE };
+  }
+
+  const scale = COORDINATE_SIZE / Math.max(naturalWidth, naturalHeight);
+  return {
+    width: naturalWidth * scale,
+    height: naturalHeight * scale
+  };
+}
+
+function loadImageDimensions(url) {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => resolve(getFloorPlanSize(image.naturalWidth, image.naturalHeight));
+    image.onerror = () => resolve({ width: COORDINATE_SIZE, height: COORDINATE_SIZE });
+    image.src = url;
+  });
+}
+
+function fitFloorPlan() {
+  if (!floorPlanBounds) return;
+  map.fitBounds(floorPlanBounds, {
+    padding: FIT_PADDING,
+    animate: false
+  });
+}
+
+function toMapLatLng(node) {
+  return [
+    Number(node.y) * floorPlanSize.height / COORDINATE_SIZE,
+    Number(node.x) * floorPlanSize.width / COORDINATE_SIZE
+  ];
+}
+
+function toStoredCoordinates(latlng) {
+  return {
+    x: latlng.lng * COORDINATE_SIZE / floorPlanSize.width,
+    y: latlng.lat * COORDINATE_SIZE / floorPlanSize.height
+  };
+}
+
+async function loadImage(floor) {
+  const token = ++imageLoadToken;
+  const nextSize = await loadImageDimensions(floor.map_image_url);
+  if (token !== imageLoadToken || Number(currentFloor?.id) !== Number(floor.id)) return;
+
   if (imageLayer) map.removeLayer(imageLayer);
-  const w = 1000, h = 1000; 
-  const bounds = [[0, 0], [h, w]];
-  imageLayer = L.imageOverlay(floor.map_image_url, bounds).addTo(map);
-  map.fitBounds(bounds);
+  floorPlanSize = nextSize;
+  floorPlanBounds = L.latLngBounds(
+    [0, 0],
+    [floorPlanSize.height, floorPlanSize.width]
+  );
+  imageLayer = L.imageOverlay(floor.map_image_url, floorPlanBounds).addTo(map);
+  map.invalidateSize();
+  fitFloorPlan();
 }
 
 function renderMap() {
@@ -293,21 +354,21 @@ function renderMap() {
     const to = nodes.find(n => n.id === e.to_node);
     if (!from || !to) return;
 
-    const line = L.polyline([[from.y, from.x], [to.y, to.x]], styleEdge(e)).addTo(map);
+    const line = L.polyline([toMapLatLng(from), toMapLatLng(to)], styleEdge(e)).addTo(map);
     line.on('click', () => openEdgeModal(e));
     edgeLines.push(line);
   });
 
   nodes.forEach(n => {
-    const m = L.circleMarker([n.y, n.x], {
+    const m = L.circleMarker(toMapLatLng(n), {
       radius: 7, color: '#2563eb', weight: 3, fillOpacity: 0.8, draggable: true
     }).addTo(map);
     
     m.bindTooltip(`${n.name || '노드'} (ID: ${n.id})`);
     
     m.on('dragend', async ev => {
-      const { lat, lng } = ev.target.getLatLng();
-      await supabase.from('indoor_nodes').update({ x: lng, y: lat }).eq('id', n.id);
+      const coordinates = toStoredCoordinates(ev.target.getLatLng());
+      await supabase.from('indoor_nodes').update(coordinates).eq('id', n.id);
       loadNodesEdges(currentFloor.id);
     });
 
@@ -330,7 +391,8 @@ async function handleNodeSelect(n) {
     shiftSelectionQueue.push(n.id);
     setStatus(`연속 선택 중: ${shiftSelectionQueue.length}개 노드`);
     
-    const marker = nodeMarkers.find(m => m.getLatLng().lat === n.y && m.getLatLng().lng === n.x);
+    const [lat, lng] = toMapLatLng(n);
+    const marker = nodeMarkers.find(m => m.getLatLng().lat === lat && m.getLatLng().lng === lng);
     if (marker) marker.setStyle({ color: '#f59e0b', weight: 5 }); // 주황색 강조
     return;
   }
@@ -503,8 +565,9 @@ map.on('dblclick', async (e) => {
   const name = prompt('새 노드의 이름을 입력하세요');
   if (!name) return;
 
+  const coordinates = toStoredCoordinates(e.latlng);
   const { error } = await supabase.from('indoor_nodes').insert({
-    name, x: e.latlng.lng, y: e.latlng.lat,
+    name, ...coordinates,
     building_id: currentFloor.building_id, floor_id: currentFloor.id, type: 'normal'
   });
 
@@ -521,6 +584,15 @@ document.addEventListener('keydown', (e) => {
 
 searchBuilding.oninput = renderFloorList;
 searchFloor.oninput = renderFloorList;
+
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    map.invalidateSize();
+    fitFloorPlan();
+  }, 120);
+});
 
 async function init() {
   tabs.forEach(tab => tab.setAttribute('aria-selected', String(tab.classList.contains('active'))));

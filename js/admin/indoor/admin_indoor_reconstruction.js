@@ -330,7 +330,7 @@ function renderPlan() {
     const fill = navigation ? (selected ? '#f8fafc' : '#4776e6') : '#64748b';
     return `<g class="map-target node-target" data-element-type="node" data-element-id="${node.id}">
       <circle cx="${node.x}" cy="${y}" r="20" fill="transparent"/>
-      <circle class="target-shape" cx="${node.x}" cy="${y}" r="${selected ? 14 : 9}" fill="${fill}" stroke="${selected ? '#4776e6' : '#fff'}" stroke-width="${selected ? 6 : 3}" opacity="${navigation ? '1' : '.45'}"/>
+      <circle class="target-shape" cx="${node.x}" cy="${y}" r="${selected ? 8 : 5}" fill="${fill}" stroke="${selected ? '#4776e6' : '#fff'}" stroke-width="${selected ? 3 : 2}" opacity="${navigation ? '1' : '.45'}"/>
       ${selected ? `<text x="${node.x}" y="${y + 6}" text-anchor="middle" fill="#4776e6" font-size="18" font-weight="900">✓</text>` : ''}
       <title>${navigation ? `${node.name || `Node ${node.id}`} 선택` : `Node ${node.id} · navigation_elements 미등록`}</title>
     </g>`;
