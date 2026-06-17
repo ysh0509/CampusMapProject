@@ -1,4 +1,9 @@
-/* index.js */
+/* index.js 
+* Smart Campus Landing Page
+* v3.0.7
+* 2026.06.15
+* Developed by SeongHyun Yoon
+*/
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Hero Text Fade-in Effect

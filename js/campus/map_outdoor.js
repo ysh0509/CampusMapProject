@@ -1,3 +1,15 @@
+/**
+ * map_outdoor.js v3.0.7
+ * 실외 지도 관련 기능을 담당하는 모듈
+ * 
+ * 1. 지도 초기화 및 기본 설정
+ * 2. 실외 노드 및 경로 렌더링
+ * 3. 출발지/도착지 선택 UI 처리
+ * 4. 경로 탐색 및 결과 표시
+ * 5. 실시간 혼잡도 데이터 반영
+ * 
+ */
+
 import { supabase } from '../admin/common/adminApi.js';
 import { initMap } from '../campus/map_core.js';
 import { loadGraph } from '../campus/graph_manager.js';

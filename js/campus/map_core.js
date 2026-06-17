@@ -1,3 +1,8 @@
+/**
+ * 지도를 초기화합니다.
+ * @param {*} containerId 
+ * @returns 
+ */
 export function initMap(containerId) {
   const map = L.map(containerId).setView([37.5585, 126.9980], 18);
 

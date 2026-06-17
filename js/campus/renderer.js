@@ -1,3 +1,12 @@
+/**
+ * renderer.js
+ * 
+ * 혼잡도에 따라 색상을 반환합니다.
+ * @param {number} c - 혼잡도 (0-1)
+ * @returns {string} - 색상 코드
+ */
+
+
 function getCongestionColor(c) {
   if (c == null) return null;
   if (c < 0.3) return '#22c55e';

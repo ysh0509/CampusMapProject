@@ -1,3 +1,12 @@
+/**
+ * 휴리스틱 함수 - 두 노드 간의 예상 비용을 계산함
+ * @param {*} aId 
+ * @param {*} bId 
+ * @param {*} nodeMap 
+ * @returns 
+ */
+
+
 export function heuristic(aId, bId, nodeMap) {
 
   const A = nodeMap.get(Number(aId));

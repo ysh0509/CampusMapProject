@@ -1,6 +1,13 @@
 /**
- * graphBuilder.js 수정본
+ * graphBuilder.js v3.0.7
  * floors의 scale 정보를 반영하여 실내 거리(Cost)를 미터 단위로 변환합니다.
+ * 축척(scale) 정보는 admin_indoor 테이블의 scale 칼럼을 참조합니다.
+ * 
+ * indoor_edges의 distance는 이미 scale이 적용된 값으로 저장되어 있으므로,
+ * buildUnifiedGraph에서는 scale을 곱하지 않고 그대로 사용합니다.
+ * 
+ * indoor_edges의 cost 계산 시, 계단(stairs)인 경우에는 2배의 가중치를 부여하여
+ * 편한 길을 우선적으로 탐색하도록 유도합니다.
  */
 export function buildUnifiedGraph({
   outdoorNodes,

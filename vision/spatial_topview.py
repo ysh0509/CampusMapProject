@@ -204,6 +204,7 @@ class SpatialEngine:
     def create_obstacle_draft(
         self, images: list[dict[str, Any]], plan_width: int, plan_height: int
     ) -> dict[str, Any]:
+        print(f"DEBUG: Received {len(images)} images for analysis.")
         if len(images) < 2:
             raise ValueError("At least two room images are required")
         if len(images) > 12:
@@ -222,6 +223,8 @@ class SpatialEngine:
                 conf=max(0.2, float(self.config["confidence"])),
                 verbose=False,
             )[0]
+            print(f"\n--- DEBUG: Image {image_index+1} Analysis ---")
+            print(f"Detected boxes: {len(result.boxes)}")
 
             for box_index, box in enumerate(result.boxes):
                 class_id = int(box.cls[0].item())

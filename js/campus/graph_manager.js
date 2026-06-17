@@ -1,3 +1,10 @@
+/**
+  * graph_manager.js
+  * Graph management functions for handling outdoor and indoor navigation graphs
+  * v3.0.7
+ */
+
+
 import { supabase } from '../admin/common/adminApi.js';
 
 /* =========================================================

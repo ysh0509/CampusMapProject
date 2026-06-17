@@ -1,13 +1,21 @@
+/**
+ * navigate.js v3.0.7
+ * 캠퍼스 내비게이션 엔진의 핵심 로직을 담당하는 모듈
+ * 
+ * 주요
+ * 1. 외부/내부 노드 선택 로직
+ * 2. 층별 scale 반영 및 indoor_edges cost 계산
+ * 3. 경로 탐색 알고리즘 실행 (웹 워커 활용)
+ * 4. 경로 시각화 및 상세 정보 표시
+ * 
+ */
+
+
 import { supabase } from '/js/admin/common/adminApi.js';
 import { initMap } from './map_core.js';
 import { loadGraph } from './graph_manager.js';
 import { drawPath, clearPath } from './renderer.js';
 import { findPath } from './pathfinder.js';
-
-/**
- * Campus Navigator - Advanced Unified Engine
- * 통합 내비게이션: 외부(지도 클릭/검색) + 내부(건물>층>노드 드롭다운)
- */
 
 const state = {
     graph: null,
